@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* Cybersecurity Professional Design System - Black and Blue Theme */
+
+@layer base {
+  :root {
+    --background: 0 0% 6%; /* near black */
+    --foreground: 0 0% 96%;
+
+    --card: 210 6% 15%;
+    --card-foreground: 0 0% 96%;
+
+    --popover: 210 6% 15%;
+    --popover-foreground: 0 0% 96%;
+
+    --primary: 138 60% 35%; /* brand green */
+    --primary-foreground: 0 0% 96%;
+
+    --secondary: 210 6% 18%;
+    --secondary-foreground: 0 0% 96%;
+
+    --muted: 210 6% 18%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 30 85% 50%; /* orange highlight */
+    --accent-foreground: 0 0% 6%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 96%;
+
+    --border: 210 6% 20%;
+    --input: 210 6% 20%;
+    --ring: 138 60% 35%;
+
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--cyber-black)) 0%,
+      hsl(215 28% 8%) 100%
+    );
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .cyber-gradient {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--cyber-blue)) 0%,
+      hsl(var(--cyber-blue-dark)) 100%
+    );
+  }
+
+  .cyber-card {
+    @apply bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl;
+  }
+
+  .cyber-input {
+    @apply bg-input/50 border border-border focus:border-primary/50 focus:ring-1 focus:ring-primary/25 transition-all duration-200;
+  }
+
+  .cyber-button {
+    @apply bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-6 py-3 rounded-lg transition-all duration-200 transform hover:scale-105;
+  }
+
+  .cyber-nav-item {
+    @apply flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-secondary/50;
+  }
+
+  .cyber-nav-item.active {
+    @apply text-primary bg-primary/10 border border-primary/20;
+  }
+}
+
+/* Animation keyframes */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.4s ease-out;
+}
+
+html {
+  transition: background 0.3s, color 0.3s;
+}
