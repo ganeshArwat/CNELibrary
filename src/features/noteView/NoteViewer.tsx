@@ -35,14 +35,17 @@ export default function NoteViewer() {
   if (error) return <p className="text-red-500">{error}</p>;
 
   return (
-    <div className="w-full max-w-5xl mx-auto overflow-auto p-4 sm:p-6 md:p-8 bg-white dark:bg-gray-900 rounded-xl shadow-lg">
-  <div className="markdown-body dark:!bg-gray-900 dark:!text-white">
-    <ReactMarkdown
-      children={content}
-      remarkPlugins={[remarkGfm]}
-      rehypePlugins={[rehypeHighlight]}
-    />
+    <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 md:p-8 overflow-auto">
+  <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-4 sm:p-6 overflow-auto">
+    <div className="markdown-body dark:!bg-gray-900 dark:!text-white">
+      <ReactMarkdown
+        children={content}
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeHighlight]}
+      />
+    </div>
   </div>
 </div>
+
   );
 }

@@ -119,3 +119,92 @@
 html {
   transition: background 0.3s, color 0.3s;
 }
+
+
+/* Tables */
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid hsl(0, 0%, 100%); /* gray-300 */
+  background-color: #f7f7f7;
+  padding: 0.5rem 0.75rem;
+}
+.dark .markdown-body th,
+.dark .markdown-body td {
+  border: 1px solid #d1d5db; /* gray-300 */
+  background-color: #bbbbbb;
+  padding: 0.5rem 0.75rem;
+}
+.markdown-body th {
+  background-color: #f3f4f6; /* gray-100 */
+  font-weight: 600;
+}
+.dark .markdown-body th {
+  background-color: #374151; /* gray-700 */
+  color: white;
+}
+.dark .markdown-body td {
+  border-color: #4b5563; /* gray-600 */
+  color: #555
+}
+
+.dark .markdown-body pre {
+  background-color: #bbbbbb;
+}
+
+
+/* Top-level unordered list */
+.markdown-body ul {
+  list-style-type: disc;   /* • */
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+/* First-level nested ul */
+.markdown-body ul ul {
+  list-style-type: circle; /* ○ */
+  padding-left: 1.5rem;    /* extra indent */
+  margin-bottom: 0.5rem;
+}
+
+/* Second-level nested ul */
+.markdown-body ul ul ul {
+  list-style-type: square; /* ▪ */
+  padding-left: 1.5rem;    /* extra indent */
+  margin-bottom: 0.25rem;
+}
+
+/* Third-level nested ul */
+.markdown-body ul ul ul ul {
+  list-style-type: disc;   /* repeat pattern */
+  padding-left: 1.5rem;
+}
+
+/* Optional: adjust spacing for li */
+.markdown-body li {
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+/* Dark mode text for list items */
+.dark .markdown-body li {
+  color: #f9fafb;
+}
+
+.markdown-body ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.markdown-body ol ol {
+  list-style-type: lower-alpha; /* a, b, c */
+}
+
+.markdown-body ol ol ol {
+  list-style-type: lower-roman; /* i, ii, iii */
+}
