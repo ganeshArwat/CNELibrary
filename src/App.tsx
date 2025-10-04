@@ -10,6 +10,7 @@ import BillSplit from "./pages/BillSplit";
 import AppLayout from "./features/layouts/AppLayout";
 import UserManagement from "./features/user/UserManagement";
 import NoteViewer from "./features/noteView/NoteViewer";
+import HomePage from "./pages/HomePage";
 
 const App = () => {
   const queryClient = new QueryClient();
@@ -23,14 +24,8 @@ const App = () => {
           <Routes>
             {/* All pages share the AppLayout */}
             <Route path="/" element={<AppLayout />}>
-              {/* Default dashboard */}
-                <Route path="note/:folder/:file" element={<NoteViewer />} />
-              {/* <Route index element={<Navigate to="/expenses" replace />} />
-              <Route path="expenses" element={<BillSplit />} /> */}
-
-                    {/* <Route path="/" element={<FolderExplorer />} />
-      <Route path="/note/:folder/:file" element={<NoteViewer />} /> */}
-
+              <Route index element={<HomePage />} />
+              <Route path="note/:folder/:file" element={<NoteViewer />} />
             </Route>
 
             {/* 404 fallback */}
