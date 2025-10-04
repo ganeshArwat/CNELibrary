@@ -37,8 +37,8 @@ export default function NoteViewer() {
 
   return (
     <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 md:p-8 overflow-auto">
-  <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-4 sm:p-6 overflow-auto">
-    <div className="markdown-body dark:!bg-gray-900 dark:!text-white">
+  <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-4 sm:p-6 overflow-auto w-full max-w-[290px] md:max-w-[1024px] lg:max-w-[1200px]">
+    <div className="markdown-body dark:!bg-gray-900 dark:!text-white text-sm sm:text-base md:text-lg">
       <ReactMarkdown
         children={content}
         remarkPlugins={[remarkGfm]}
