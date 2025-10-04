@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import cneLogo from "@/images/Cnelogo.png";
 import { useTheme } from "@/context/ThemeContext";
+const apiHost = import.meta.env.VITE_API_HOST;
 
 interface FileItem {
   name: string;
@@ -36,7 +37,7 @@ export default function AppLayout() {
 
   // Fetch top-level folders on mount
   useEffect(() => {
-    fetch("http://localhost:5000/folders")
+    fetch(`${apiHost}/folders`)
       .then((res) => res.json())
       .then((data) => setFolders(data))
       .catch((err) => console.error("Failed to fetch folders", err));
@@ -51,7 +52,7 @@ export default function AppLayout() {
 
       // Fetch files if not already fetched
       if (!filesByFolder[folder]) {
-        fetch(`http://localhost:5000/files/${folder}`)
+        fetch(`${apiHost}/files/${folder}`)
           .then((res) => res.json())
           .then((data) =>
             setFilesByFolder((prev) => ({ ...prev, [folder]: data }))
@@ -86,7 +87,7 @@ export default function AppLayout() {
     }
 
     const timeout = setTimeout(() => {
-      fetch(`http://localhost:5000/search?q=${encodeURIComponent(noteSearch)}`)
+      fetch(`${apiHost}/search?q=${encodeURIComponent(noteSearch)}`)
         .then((res) => res.json())
         .then((data) => setSearchResults(data))
         .catch((err) => console.error("Search failed", err));

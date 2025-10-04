@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github.css";
 import "github-markdown-css/github-markdown.css";
+const apiHost = import.meta.env.VITE_API_HOST;
 
 export default function NoteViewer() {
   const { folder, file } = useParams<{ folder: string; file: string }>();
@@ -16,7 +17,7 @@ export default function NoteViewer() {
     if (!folder || !file) return;
 
     setLoading(true);
-    fetch(`http://localhost:5000/note/${folder}/${file}`)
+    fetch(`${apiHost}/note/${folder}/${file}`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch note");
         return res.text();

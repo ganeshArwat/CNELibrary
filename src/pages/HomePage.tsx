@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Folder, FileText } from "lucide-react";
+const apiHost = import.meta.env.VITE_API_HOST;
 
 interface FileItem {
   name: string;
@@ -15,14 +16,14 @@ export default function HomePage() {
 
   // Fetch top-level folders
   useEffect(() => {
-    fetch("http://localhost:5000/folders")
+    fetch(`${apiHost}/folders`)
       .then((res) => res.json())
       .then((data: string[]) => {
         setFolders(data);
 
         // Fetch files for each folder
         data.forEach((folder) => {
-          fetch(`http://localhost:5000/files/${folder}`)
+          fetch(`${apiHost}/files/${folder}`)
             .then((res) => res.json())
             .then((files: FileItem[]) => {
               setFilesMap((prev) => ({ ...prev, [folder]: files }));
