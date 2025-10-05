@@ -23,7 +23,11 @@ export default function HomePage() {
   const navigate = useNavigate();
 
   // Fetch folders
-  const { data: folders, isLoading, isError } = useQuery({
+  const {
+    data: folders,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["folders"],
     queryFn: fetchFolders,
   });
@@ -39,7 +43,8 @@ export default function HomePage() {
   });
 
   if (isLoading) return <p className="p-6">Loading folders...</p>;
-  if (isError) return <p className="p-6 text-red-500">Failed to load folders.</p>;
+  if (isError)
+    return <p className="p-6 text-red-500">Failed to load folders.</p>;
 
   const handleFileClick = (folder: string, file: string) => {
     navigate(`/note/${folder}/${file}`);
@@ -67,8 +72,14 @@ export default function HomePage() {
               </div>
 
               <ul className="mt-2 space-y-1">
-                {isLoading && <li className="text-sm text-gray-400">Loading files...</li>}
-                {isError && <li className="text-sm text-red-500">Failed to load files.</li>}
+                {isLoading && (
+                  <li className="text-sm text-gray-400">Loading files...</li>
+                )}
+                {isError && (
+                  <li className="text-sm text-red-500">
+                    Failed to load files.
+                  </li>
+                )}
                 {files?.map((file) => (
                   <li key={file.name}>
                     <button
