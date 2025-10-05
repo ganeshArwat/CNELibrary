@@ -24,7 +24,9 @@ export default function AppLayout() {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [folders, setFolders] = useState<string[]>([]);
-  const [filesByFolder, setFilesByFolder] = useState<Record<string, FileItem[]>>({});
+  const [filesByFolder, setFilesByFolder] = useState<
+    Record<string, FileItem[]>
+  >({});
   const [openFolders, setOpenFolders] = useState<string[]>([]);
   const [folderSearch, setFolderSearch] = useState("");
   const [noteSearch, setNoteSearch] = useState("");
@@ -69,7 +71,10 @@ export default function AppLayout() {
 
   // ✅ Folder search filter
   const filteredFolders = useMemo(
-    () => folders.filter((f) => f.toLowerCase().includes(folderSearch.toLowerCase())),
+    () =>
+      folders.filter((f) =>
+        f.toLowerCase().includes(folderSearch.toLowerCase())
+      ),
     [folders, folderSearch]
   );
 
@@ -100,11 +105,12 @@ export default function AppLayout() {
         >
           {/* ===== SIDEBAR ===== */}
           <aside
-            className={`fixed inset-y-0 left-0 w-64 z-50 transform transition-transform
-            ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-            md:translate-x-0 md:relative
-            border-r border-gray-200 dark:border-gray-700 flex flex-col backdrop-blur-sm
-            ${darkMode ? "bg-gray-900/90" : "bg-white shadow-md"}`}
+            className={`fixed inset-y-0 left-0 z-50 transform transition-transform
+    ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+    md:translate-x-0 md:relative
+    border-r border-gray-200 dark:border-gray-700 flex flex-col backdrop-blur-sm
+    ${darkMode ? "bg-gray-900/90" : "bg-white shadow-md"}
+    w-80 md:w-64 max-w-full`} // ✅ wider on mobile
           >
             {/* Logo */}
             <div className="flex items-center justify-center py-4 px-3 border-b border-gray-200 dark:border-gray-700">
@@ -124,9 +130,9 @@ export default function AppLayout() {
                   value={folderSearch}
                   onChange={(e) => setFolderSearch(e.target.value)}
                   className="w-full pl-10 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600
-                    bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100
-                    placeholder-gray-400 dark:placeholder-gray-400
-                    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100
+          placeholder-gray-400 dark:placeholder-gray-400
+          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 <SearchIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400 dark:text-gray-300" />
               </div>
@@ -143,22 +149,24 @@ export default function AppLayout() {
                     <Button
                       variant="ghost"
                       className={`flex items-center justify-between w-full px-4 py-2 text-left font-semibold rounded-lg
-                      ${
-                        isFolderActive
-                          ? "bg-green-100 dark:bg-green-700 text-green-800 dark:text-green-100"
-                          : "text-gray-800 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-green-800 hover:text-green-700 dark:hover:text-green-300"
-                      }`}
+              ${
+                isFolderActive
+                  ? "bg-green-100 dark:bg-green-700 text-green-800 dark:text-green-100"
+                  : "text-gray-800 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-green-800 hover:text-green-700 dark:hover:text-green-300"
+              }`}
                       onClick={() => toggleFolder(folder)}
+                      title={folder}
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
                         <Folder
-                          className={`h-5 w-5 ${
+                          className={`h-5 w-5 flex-shrink-0 ${
                             isFolderActive
                               ? "text-green-700 dark:text-green-200"
                               : "text-gray-700 dark:text-gray-400"
                           }`}
                         />
-                        {folder}
+                        <span className="break-words">{folder}</span>{" "}
+                        {/* wrap long folder names */}
                       </div>
                       <span className="text-gray-400 dark:text-gray-400">
                         {isOpen ? "▾" : "▸"}
@@ -168,21 +176,28 @@ export default function AppLayout() {
                     {isOpen && filesByFolder[folder] && (
                       <ul className="ml-6 mt-2 space-y-1">
                         {filesByFolder[folder].map((file) => {
-                          const isFileActive = isFolderActive && selectedFile === file.name;
+                          const isFileActive =
+                            isFolderActive && selectedFile === file.name;
                           return (
                             <li key={file.name}>
                               <Button
                                 variant="ghost"
                                 className={`flex items-center gap-2 w-full justify-start text-sm px-3 py-1 rounded-md
-                                  ${
-                                    isFileActive
-                                      ? "bg-green-50 dark:bg-gray-700 text-green-700 dark:text-green-200"
-                                      : "text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-800 hover:text-green-700 dark:hover:text-green-300"
-                                  }`}
-                                onClick={() => handleFileClick(folder, file.name)}
+                        ${
+                          isFileActive
+                            ? "bg-green-50 dark:bg-gray-700 text-green-700 dark:text-green-200"
+                            : "text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-800 hover:text-green-700 dark:hover:text-green-300"
+                        }`}
+                                onClick={() =>
+                                  handleFileClick(folder, file.name)
+                                }
+                                title={file.name}
                               >
-                                <FileText className="h-4 w-4" />
-                                {file.name}
+                                <FileText className="h-4 w-4 flex-shrink-0" />
+                                <span className="break-words">
+                                  {file.name}
+                                </span>{" "}
+                                {/* wrap long file names */}
                               </Button>
                             </li>
                           );
@@ -208,7 +223,11 @@ export default function AppLayout() {
             {/* Header */}
             <header
               className={`flex items-center justify-between border-b border-border/20 px-3 md:px-6 py-3 md:py-5 h-16 md:h-20 transition-colors
-                ${darkMode ? "bg-background/50" : "bg-gray-700 text-white shadow-sm"}`}
+                ${
+                  darkMode
+                    ? "bg-background/50"
+                    : "bg-gray-700 text-white shadow-sm"
+                }`}
             >
               {/* Left: Hamburger + Title */}
               <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
@@ -249,8 +268,14 @@ export default function AppLayout() {
                         <div
                           key={res.id}
                           className={`px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition 
-                            ${idx !== searchResults.length - 1 ? "border-b border-gray-200 dark:border-gray-700" : ""}`}
-                          onClick={() => navigate(`/note/${res.folder}/${res.filename}`)}
+                            ${
+                              idx !== searchResults.length - 1
+                                ? "border-b border-gray-200 dark:border-gray-700"
+                                : ""
+                            }`}
+                          onClick={() =>
+                            navigate(`/note/${res.folder}/${res.filename}`)
+                          }
                         >
                           <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
                             {res.filename}
@@ -286,8 +311,14 @@ export default function AppLayout() {
                           <div
                             key={res.id}
                             className={`px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition 
-                              ${idx !== searchResults.length - 1 ? "border-b border-gray-200 dark:border-gray-700" : ""}`}
-                            onClick={() => navigate(`/note/${res.folder}/${res.filename}`)}
+                              ${
+                                idx !== searchResults.length - 1
+                                  ? "border-b border-gray-200 dark:border-gray-700"
+                                  : ""
+                              }`}
+                            onClick={() =>
+                              navigate(`/note/${res.folder}/${res.filename}`)
+                            }
                           >
                             <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
                               {res.filename}
