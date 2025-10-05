@@ -22,7 +22,6 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            {/* All pages share the AppLayout */}
             <Route path="/" element={<AppLayout />}>
               <Route index element={<HomePage />} />
               <Route path="note/:folder/:file" element={<NoteViewer />} />

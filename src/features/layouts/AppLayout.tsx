@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import cneLogo from "@/images/Cnelogo.png";
 import { useTheme } from "@/context/ThemeContext";
-const apiHost = import.meta.env.VITE_API_HOST;
+import api from "@/api/axios"; // ✅ use axios instance
 
 interface FileItem {
   name: string;
@@ -24,45 +24,42 @@ export default function AppLayout() {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [folders, setFolders] = useState<string[]>([]);
-  const [filesByFolder, setFilesByFolder] = useState<
-    Record<string, FileItem[]>
-  >({});
+  const [filesByFolder, setFilesByFolder] = useState<Record<string, FileItem[]>>({});
   const [openFolders, setOpenFolders] = useState<string[]>([]);
   const [folderSearch, setFolderSearch] = useState("");
   const [noteSearch, setNoteSearch] = useState("");
   const [selectedFolder, setSelectedFolder] = useState("");
   const [selectedFile, setSelectedFile] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false); // ✅ mobile search toggle
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
-  // Fetch top-level folders on mount
+  // ✅ Fetch top-level folders using Axios instance
   useEffect(() => {
-    fetch(`${apiHost}/folders`)
-      .then((res) => res.json())
-      .then((data) => setFolders(data))
+    api
+      .get("/folders")
+      .then((res) => setFolders(res.data))
       .catch((err) => console.error("Failed to fetch folders", err));
   }, []);
 
-  // Toggle folder open/close
+  // ✅ Toggle folder open/close & fetch files if needed
   const toggleFolder = async (folder: string) => {
     if (openFolders.includes(folder)) {
       setOpenFolders(openFolders.filter((f) => f !== folder));
     } else {
       setOpenFolders([...openFolders, folder]);
 
-      // Fetch files if not already fetched
       if (!filesByFolder[folder]) {
-        fetch(`${apiHost}/files/${folder}`)
-          .then((res) => res.json())
-          .then((data) =>
-            setFilesByFolder((prev) => ({ ...prev, [folder]: data }))
-          )
+        api
+          .get(`/files/${folder}`)
+          .then((res) => {
+            setFilesByFolder((prev) => ({ ...prev, [folder]: res.data }));
+          })
           .catch((err) => console.error("Failed to fetch files", err));
       }
     }
   };
 
-  // Handle note click
+  // ✅ Handle file click navigation
   const handleFileClick = (folder: string, file: string) => {
     setSelectedFolder(folder);
     setSelectedFile(file);
@@ -70,26 +67,23 @@ export default function AppLayout() {
     setSidebarOpen(false);
   };
 
-  // Filter folders based on search
+  // ✅ Folder search filter
   const filteredFolders = useMemo(
-    () =>
-      folders.filter((f) =>
-        f.toLowerCase().includes(folderSearch.toLowerCase())
-      ),
+    () => folders.filter((f) => f.toLowerCase().includes(folderSearch.toLowerCase())),
     [folders, folderSearch]
   );
 
-  // Debounced search for notes
+  // ✅ Debounced note search using Axios
   useEffect(() => {
-    if (!noteSearch) {
+    if (!noteSearch.trim()) {
       setSearchResults([]);
       return;
     }
 
     const timeout = setTimeout(() => {
-      fetch(`${apiHost}/search?q=${encodeURIComponent(noteSearch)}`)
-        .then((res) => res.json())
-        .then((data) => setSearchResults(data))
+      api
+        .get(`/search?q=${encodeURIComponent(noteSearch)}`)
+        .then((res) => setSearchResults(res.data))
         .catch((err) => console.error("Search failed", err));
     }, 300);
 
@@ -104,13 +98,12 @@ export default function AppLayout() {
             darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-800"
           }`}
         >
-          {/* SIDEBAR */}
+          {/* ===== SIDEBAR ===== */}
           <aside
             className={`fixed inset-y-0 left-0 w-64 z-50 transform transition-transform
-    ${
-      sidebarOpen ? "translate-x-0" : "-translate-x-full"
-    } md:translate-x-0 md:relative
-    border-r border-gray-200 dark:border-gray-700 flex flex-col backdrop-blur-sm
+            ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+            md:translate-x-0 md:relative
+            border-r border-gray-200 dark:border-gray-700 flex flex-col backdrop-blur-sm
             ${darkMode ? "bg-gray-900/90" : "bg-white shadow-md"}`}
           >
             {/* Logo */}
@@ -118,7 +111,7 @@ export default function AppLayout() {
               <img
                 src={cneLogo}
                 alt="Notes Library Logo"
-                className="h-16 w-auto object-contain mx-auto my-auto"
+                className="h-16 w-auto object-contain mx-auto"
               />
             </div>
 
@@ -131,15 +124,15 @@ export default function AppLayout() {
                   value={folderSearch}
                   onChange={(e) => setFolderSearch(e.target.value)}
                   className="w-full pl-10 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600
-                   bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100
-                   placeholder-gray-400 dark:placeholder-gray-400
-                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100
+                    placeholder-gray-400 dark:placeholder-gray-400
+                    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 <SearchIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400 dark:text-gray-300" />
               </div>
             </div>
 
-            {/* Folder & File Explorer */}
+            {/* Folder & File List */}
             <nav className="flex-1 p-4 overflow-y-auto space-y-3">
               {filteredFolders.map((folder) => {
                 const isFolderActive = selectedFolder === folder;
@@ -172,25 +165,21 @@ export default function AppLayout() {
                       </span>
                     </Button>
 
-                    {/* Files */}
                     {isOpen && filesByFolder[folder] && (
                       <ul className="ml-6 mt-2 space-y-1">
                         {filesByFolder[folder].map((file) => {
-                          const isFileActive =
-                            isFolderActive && selectedFile === file.name;
+                          const isFileActive = isFolderActive && selectedFile === file.name;
                           return (
                             <li key={file.name}>
                               <Button
                                 variant="ghost"
                                 className={`flex items-center gap-2 w-full justify-start text-sm px-3 py-1 rounded-md
-                      ${
-                        isFileActive
-                          ? "bg-green-50 dark:bg-gray-700 text-green-700 dark:text-green-200"
-                          : "text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-800 hover:text-green-700 dark:hover:text-green-300"
-                      }`}
-                                onClick={() =>
-                                  handleFileClick(folder, file.name)
-                                }
+                                  ${
+                                    isFileActive
+                                      ? "bg-green-50 dark:bg-gray-700 text-green-700 dark:text-green-200"
+                                      : "text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-800 hover:text-green-700 dark:hover:text-green-300"
+                                  }`}
+                                onClick={() => handleFileClick(folder, file.name)}
                               >
                                 <FileText className="h-4 w-4" />
                                 {file.name}
@@ -214,13 +203,12 @@ export default function AppLayout() {
             />
           )}
 
-          {/* MAIN CONTENT */}
+          {/* ===== MAIN CONTENT ===== */}
           <div className="flex-1 flex flex-col min-h-screen bg-gray-200 dark:bg-gray-800">
-            {/* HEADER */}
-            {/* HEADER */}
+            {/* Header */}
             <header
               className={`flex items-center justify-between border-b border-border/20 px-3 md:px-6 py-3 md:py-5 h-16 md:h-20 transition-colors
-  ${darkMode ? "bg-background/50" : "bg-gray-700 text-white shadow-sm"}`}
+                ${darkMode ? "bg-background/50" : "bg-gray-700 text-white shadow-sm"}`}
             >
               {/* Left: Hamburger + Title */}
               <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
@@ -234,22 +222,19 @@ export default function AppLayout() {
                     }`}
                   />
                 </button>
-                <div className="min-w-0 flex-1 flex items-center gap-2">
-                  <h1
-                    className="text-sm md:text-xl font-bold tracking-wide cursor-pointer 
-         text-white dark:text-gray-100 hover:text-blue-300 dark:hover:text-blue-400 
-         transition-colors duration-200"
-                    onClick={() => navigate(`/`)}
-                    title="Go to Home"
-                  >
-                    Notes Library
-                  </h1>
-                </div>
+                <h1
+                  className="text-sm md:text-xl font-bold tracking-wide cursor-pointer 
+                    text-white dark:text-gray-100 hover:text-blue-300 dark:hover:text-blue-400 
+                    transition-colors duration-200"
+                  onClick={() => navigate(`/`)}
+                >
+                  Notes Library
+                </h1>
               </div>
 
-              {/* Right: Theme + Note Search */}
+              {/* Right: Search + Theme Toggle */}
               <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 relative">
-                {/* Search input for desktop */}
+                {/* Desktop search */}
                 <div className="hidden md:block relative">
                   <input
                     type="text"
@@ -258,21 +243,14 @@ export default function AppLayout() {
                     onChange={(e) => setNoteSearch(e.target.value)}
                     className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-500 w-64 transition"
                   />
-                  {/* Note search results dropdown */}
                   {searchResults.length > 0 && (
                     <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-96 overflow-auto z-50">
                       {searchResults.map((res, idx) => (
                         <div
                           key={res.id}
                           className={`px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition 
-                    ${
-                      idx !== searchResults.length - 1
-                        ? "border-b border-gray-200 dark:border-gray-700"
-                        : ""
-                    }`}
-                          onClick={() =>
-                            navigate(`/note${res.folder}/${res.filename}`)
-                          }
+                            ${idx !== searchResults.length - 1 ? "border-b border-gray-200 dark:border-gray-700" : ""}`}
+                          onClick={() => navigate(`/note/${res.folder}/${res.filename}`)}
                         >
                           <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
                             {res.filename}
@@ -286,7 +264,7 @@ export default function AppLayout() {
                   )}
                 </div>
 
-                {/* Search icon for mobile */}
+                {/* Mobile search */}
                 <div className="md:hidden relative">
                   <button
                     onClick={() => setMobileSearchOpen((prev) => !prev)}
@@ -303,20 +281,13 @@ export default function AppLayout() {
                         onChange={(e) => setNoteSearch(e.target.value)}
                         className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-500 transition"
                       />
-                      {/* Dropdown results */}
                       {searchResults.length > 0 &&
                         searchResults.map((res, idx) => (
                           <div
                             key={res.id}
                             className={`px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition 
-                      ${
-                        idx !== searchResults.length - 1
-                          ? "border-b border-gray-200 dark:border-gray-700"
-                          : ""
-                      }`}
-                            onClick={() =>
-                              navigate(`/note${res.folder}/${res.filename}`)
-                            }
+                              ${idx !== searchResults.length - 1 ? "border-b border-gray-200 dark:border-gray-700" : ""}`}
+                            onClick={() => navigate(`/note/${res.folder}/${res.filename}`)}
                           >
                             <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
                               {res.filename}
@@ -344,7 +315,7 @@ export default function AppLayout() {
               </div>
             </header>
 
-            {/* CONTENT */}
+            {/* Main content */}
             <main className="flex-1 p-4 md:p-8 overflow-auto">
               <div className="max-w-7xl mx-auto animate-fade-in-up">
                 <Outlet />

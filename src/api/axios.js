@@ -1,45 +1,43 @@
-import axios from 'axios';
-const apiUrl = import.meta.env.VITE_API_HOST;
+import axios from "axios";
+
+const apiHost = import.meta.env.VITE_API_HOST || "https://cnelibrary.onrender.com";
 
 const api = axios.create({
-  baseURL: apiUrl,
+  baseURL: apiHost,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
+    Accept: "application/json",
   },
+  withCredentials: false, // set to true if backend uses cookies for auth
 });
 
-
-// Request Interceptor
+// 🔹 Request Interceptor
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('jwtToken');
+    const token = localStorage.getItem("jwtToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-
-// Response InterCeptor
+// 🔹 Response Interceptor
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('jwtToken');
-      localStorage.removeItem('roleType');
-      localStorage.removeItem('userId');
-      localStorage.removeItem('email');
-      localStorage.removeItem('agencyName');
-      window.location.href = '/';
+      // Clear local storage and redirect to login
+      ["jwtToken"].forEach((key) =>
+        localStorage.removeItem(key)
+      );
+      window.location.href = "/";
+    } else if (error.response?.status === 500) {
+      console.error("Server error:", error.response.data);
     }
     return Promise.reject(error);
   }
 );
 
-export default api; 
+export default api;
