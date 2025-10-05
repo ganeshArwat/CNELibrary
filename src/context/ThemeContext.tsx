@@ -17,7 +17,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     const [darkMode, setDarkMode] = useState<boolean>(() => {
         const stored = localStorage.getItem("darkMode");
-        return stored ? stored === "true" : false;
+        return stored ? stored === "true" : true;
     });
 
   // ✅ Apply class immediately on first render (prevents flash)
