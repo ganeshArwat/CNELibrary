@@ -148,12 +148,14 @@ export default function AppLayout() {
           >
             {/* Logo */}
             <div className="flex items-center justify-center py-4 px-3 border-b border-gray-200 dark:border-gray-700">
-              <img
-                src={cneLogo}
-                alt="Notes Library Logo"
-                className="h-16 w-auto object-contain mx-auto"
-              />
-            </div>
+  <img
+    src={cneLogo}
+    alt="Notes Library Logo"
+    className="h-16 w-auto object-contain mx-auto cursor-pointer"
+    onClick={() => navigate("/")} // ✅ Navigate to home
+  />
+</div>
+
 
             {/* Folder Search */}
             <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
