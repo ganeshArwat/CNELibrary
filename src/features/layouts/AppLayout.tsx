@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,6 +41,40 @@ export default function AppLayout() {
       .get("/folders")
       .then((res) => setFolders(res.data))
       .catch((err) => console.error("Failed to fetch folders", err));
+  }, []);
+
+  const desktopSearchRef = useRef<HTMLDivElement>(null);
+  const mobileSearchRef = useRef<HTMLDivElement>(null);
+
+  // Close desktop search dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        desktopSearchRef.current &&
+        !desktopSearchRef.current.contains(event.target as Node)
+      ) {
+        setSearchResults([]);
+        setNoteSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Close mobile search dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutsideMobile = (event: MouseEvent) => {
+      if (
+        mobileSearchRef.current &&
+        !mobileSearchRef.current.contains(event.target as Node)
+      ) {
+        setMobileSearchOpen(false);
+        setNoteSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutsideMobile);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutsideMobile);
   }, []);
 
   // ✅ Toggle folder open/close & fetch files if needed
@@ -254,28 +288,32 @@ export default function AppLayout() {
               {/* Right: Search + Theme Toggle */}
               <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 relative">
                 {/* Desktop search */}
-                <div className="hidden md:block relative">
+                <div
+                  className="hidden md:block relative"
+                  ref={desktopSearchRef}
+                >
                   <input
                     type="text"
                     placeholder="Search notes..."
                     value={noteSearch}
                     onChange={(e) => setNoteSearch(e.target.value)}
-                    className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-500 w-64 transition"
+                    className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-500 w-96 transition"
                   />
                   {searchResults.length > 0 && (
-                    <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-96 overflow-auto z-50">
+                    <div className="absolute right-0 top-full mt-2 w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-96 overflow-auto z-50">
                       {searchResults.map((res, idx) => (
                         <div
                           key={res.id}
                           className={`px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition 
-                            ${
-                              idx !== searchResults.length - 1
-                                ? "border-b border-gray-200 dark:border-gray-700"
-                                : ""
-                            }`}
-                          onClick={() =>
-                            navigate(`/note/${res.folder}/${res.filename}`)
-                          }
+            ${
+              idx !== searchResults.length - 1
+                ? "border-b border-gray-200 dark:border-gray-700"
+                : ""
+            }`}
+                          onClick={() => {
+                            navigate(`/note/${res.folder}/${res.filename}`);
+                            setSearchResults([]);
+                          }}
                         >
                           <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
                             {res.filename}
@@ -290,7 +328,7 @@ export default function AppLayout() {
                 </div>
 
                 {/* Mobile search */}
-                <div className="md:hidden relative">
+                <div className="md:hidden relative" ref={mobileSearchRef}>
                   <button
                     onClick={() => setMobileSearchOpen((prev) => !prev)}
                     className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition"
