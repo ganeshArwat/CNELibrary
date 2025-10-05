@@ -55,47 +55,60 @@ export default function HomePage() {
       <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {folders?.map((folder, i) => {
-          const query = folderFilesQueries[i];
-          const files = query?.data;
-          const isLoading = query?.isLoading;
-          const isError = query?.isError;
+  {folders?.map((folder, i) => {
+    const query = folderFilesQueries[i];
+    const files = query?.data;
+    const isLoading = query?.isLoading;
+    const isError = query?.isError;
 
-          return (
-            <div
-              key={folder}
-              className="p-4 bg-white dark:bg-gray-700 rounded-lg shadow hover:shadow-lg transition"
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <Folder className="h-6 w-6 text-blue-500" />
-                <h2 className="font-semibold text-lg">{folder}</h2>
-              </div>
+    return (
+      <div
+        key={folder}
+        className="bg-white dark:bg-gray-700 rounded-xl shadow-md hover:shadow-lg transition p-4 flex flex-col"
+      >
+        {/* Folder Header */}
+        <div className="flex items-center gap-3 mb-3">
+          <Folder className="h-6 w-6 text-blue-500 flex-shrink-0" />
+          <h2 className="font-semibold text-lg truncate">{folder}</h2>
+        </div>
 
-              <ul className="mt-2 space-y-1">
-                {isLoading && (
-                  <li className="text-sm text-gray-400">Loading files...</li>
-                )}
-                {isError && (
-                  <li className="text-sm text-red-500">
-                    Failed to load files.
-                  </li>
-                )}
-                {files?.map((file) => (
-                  <li key={file.name}>
-                    <button
-                      onClick={() => handleFileClick(folder, file.name)}
-                      className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-blue-500"
-                    >
-                      <FileText className="h-4 w-4" />
-                      {file.name}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          );
-        })}
+        {/* File List Container */}
+        <div className="flex-1 overflow-y-auto max-h-64">
+          {isLoading && (
+            <p className="text-sm text-gray-400">Loading files...</p>
+          )}
+          {isError && (
+            <p className="text-sm text-red-500">Failed to load files.</p>
+          )}
+          {files?.length === 0 && !isLoading && !isError && (
+            <p className="text-sm text-gray-500">No files found</p>
+          )}
+          <ul className="space-y-1">
+            {files?.map((file) => (
+              <li key={file.name}>
+                <button
+                  onClick={() => handleFileClick(folder, file.name)}
+                  className="flex items-center gap-2 text-sm text-gray-800 dark:text-gray-300 hover:text-blue-500 w-full text-left"
+                >
+                  <FileText className="h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">{file.name}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Show file count at bottom */}
+        {files?.length > 0 && (
+          <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+            {files.length} {files.length === 1 ? "file" : "files"}
+          </div>
+        )}
       </div>
+    );
+  })}
+</div>
+
     </div>
   );
 }
