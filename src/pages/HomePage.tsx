@@ -89,6 +89,7 @@ export default function HomePage() {
                 <button
                   onClick={() => handleFileClick(folder, file.name)}
                   className="flex items-center gap-2 text-sm text-gray-800 dark:text-gray-300 hover:text-blue-500 w-full text-left"
+                  title={file.name} // Tooltip added here
                 >
                   <FileText className="h-4 w-4 flex-shrink-0" />
                   <span className="truncate">{file.name}</span>
