@@ -337,42 +337,62 @@ export default function AppLayout() {
                     <SearchIcon className={`h-5 w-5 text-white`} />
                   </button>
                   {mobileSearchOpen && (
-                    <div className="fixed inset-0 bg-black/40 z-[9999] flex items-start justify-center pt-20">
+                    <div
+                      className="fixed inset-0 z-[9999] bg-black/40"
+                      onClick={() => setMobileSearchOpen(false)} // close on backdrop click
+                    >
                       <div
-                        className="w-11/12 max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg"
-                        onClick={(e) => e.stopPropagation()} // prevent closing when clicking inside
+                        className="absolute top-0 left-0 w-full bg-white dark:bg-gray-900 shadow-lg border-b border-gray-200 dark:border-gray-700 p-3"
+                        onClick={(e) => e.stopPropagation()} // prevent closing when typing
                       >
-                        <input
-                          type="text"
-                          placeholder="Search notes..."
-                          value={noteSearch}
-                          onChange={(e) => setNoteSearch(e.target.value)}
-                          className="w-full px-3 py-2 rounded-t-lg border-b border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-500"
-                        />
+                        {/* Search Input */}
+                        <div className="flex items-center gap-2">
+                          <SearchIcon className="h-5 w-5 text-gray-600 dark:text-gray-300 flex-shrink-0" />
+                          <input
+                            type="text"
+                            placeholder="Search notes..."
+                            value={noteSearch}
+                            onChange={(e) => setNoteSearch(e.target.value)}
+                            className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-500"
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => setMobileSearchOpen(false)}
+                            className="text-sm text-blue-500 hover:underline"
+                          >
+                            Cancel
+                          </button>
+                        </div>
 
-                        {searchResults.length > 0 &&
-                          searchResults.map((res, idx) => (
-                            <div
-                              key={res.id}
-                              className={`px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition 
-              ${
-                idx !== searchResults.length - 1
-                  ? "border-b border-gray-200 dark:border-gray-700"
-                  : ""
-              }`}
-                              onClick={() => {
-                                navigate(`/note/${res.folder}/${res.filename}`);
-                                setMobileSearchOpen(false);
-                              }}
-                            >
-                              <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                                {res.filename}
+                        {/* Search Results */}
+                        {searchResults.length > 0 && (
+                          <div className="mt-3 max-h-[70vh] overflow-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                            {searchResults.map((res, idx) => (
+                              <div
+                                key={res.id}
+                                className={`px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition 
+                ${
+                  idx !== searchResults.length - 1
+                    ? "border-b border-gray-200 dark:border-gray-700"
+                    : ""
+                }`}
+                                onClick={() => {
+                                  navigate(
+                                    `/note${res.folder}/${res.filename}`
+                                  );
+                                  setMobileSearchOpen(false);
+                                }}
+                              >
+                                <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                                  {res.filename}
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                  {res.folder}
+                                </div>
                               </div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {res.folder}
-                              </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
