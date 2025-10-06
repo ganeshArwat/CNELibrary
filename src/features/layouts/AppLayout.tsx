@@ -57,8 +57,8 @@ export default function AppLayout() {
         setNoteSearch("");
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
   // Close mobile search dropdown when clicking outside
@@ -72,9 +72,9 @@ export default function AppLayout() {
         setNoteSearch("");
       }
     };
-    document.addEventListener("mousedown", handleClickOutsideMobile);
+    document.addEventListener("click", handleClickOutsideMobile);
     return () =>
-      document.removeEventListener("mousedown", handleClickOutsideMobile);
+      document.removeEventListener("click", handleClickOutsideMobile);
   }, []);
 
   // ✅ Toggle folder open/close & fetch files if needed
@@ -313,7 +313,7 @@ export default function AppLayout() {
                 : ""
             }`}
                           onClick={() => {
-                            navigate(`/note/${res.folder}/${res.filename}`);
+                            navigate(`/note${res.folder}/${res.filename}`);
                             setSearchResults([]);
                           }}
                         >
@@ -357,7 +357,7 @@ export default function AppLayout() {
                                   : ""
                               }`}
                             onClick={() =>
-                              navigate(`/note/${res.folder}/${res.filename}`)
+                              navigate(`/note${res.folder}/${res.filename}`)
                             }
                           >
                             <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
