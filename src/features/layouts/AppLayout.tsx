@@ -418,6 +418,19 @@ export default function AppLayout() {
                 <Outlet />
               </div>
             </main>
+            <footer
+  className="w-full text-center py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300 mt-auto"
+>
+  Developed by{" "}
+  <a
+    href="https://ganesharwat.in/"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="text-blue-500 hover:underline"
+  >
+    Ganesh Arwat
+  </a>
+</footer>
           </div>
         </div>
       </div>
