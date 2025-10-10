@@ -130,13 +130,13 @@ html {
 .markdown-body th,
 .markdown-body td {
   border: 1px solid hsl(0, 0%, 100%); /* gray-300 */
-  background-color: #f7f7f7;
+  background-color: #1d222a;
   padding: 0.5rem 0.75rem;
 }
 .dark .markdown-body th,
 .dark .markdown-body td {
   border: 1px solid #d1d5db; /* gray-300 */
-  background-color: #bbbbbb;
+  background-color: #1d222a;
   padding: 0.5rem 0.75rem;
 }
 .markdown-body th {
@@ -149,7 +149,11 @@ html {
 }
 .dark .markdown-body td {
   border-color: #4b5563; /* gray-600 */
-  color: #555
+  color: #fff
+}
+.dark .markdown-body td code {
+  border-color: #4b5563; /* gray-600 */
+  color: #bbb6f5
 }
 
 .dark .markdown-body pre {
@@ -158,6 +162,7 @@ html {
 .markdown-body pre {
   background-color: #d3d3d3;
 }
+
 
 
 /* Top-level unordered list */
