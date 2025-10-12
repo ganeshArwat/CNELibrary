@@ -43,13 +43,13 @@ export default function NoteViewer() {
   if (isLoading) return <p>Loading note...</p>;
   if (isError) return <p className="text-red-500">{(error as Error).message}</p>;
 
-  if (fileExt === "pdf") {
-    return (
-      <div className="p-4">
-        <PDFViewer fileUrl={content as string} />
-      </div>
-    );
-  }
+ if (fileExt === "pdf") {
+  return (
+    <div className="h-full w-full flex items-center justify-center">
+      <PDFViewer fileUrl={content as string} />
+    </div>
+  );
+}
 
   return (
     <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 md:p-8 overflow-auto">

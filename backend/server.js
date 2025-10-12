@@ -130,10 +130,35 @@ app.get("/note/:folder/:file", async (req, res) => {
   try {
     const { folder, file } = req.params;
     const filePath = `${folder}/${file}`;
-    const content = await fetchGitHubFile(filePath);
+
+    // Get file metadata
+    const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${filePath}?ref=${DEFAULT_BRANCH}`;
+    const { data } = await axios.get(url, {
+      headers: {
+        "User-Agent": "express-app",
+        Authorization: `token ${GITHUB_TOKEN}`,
+      },
+      responseType: "json",
+    });
+
+    if (data.type !== "file") throw new Error("Not a file");
+
+    // Check file type by extension
+    if (file.endsWith(".pdf")) {
+      // Return raw binary
+      const buffer = Buffer.from(data.content, "base64");
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `inline; filename="${file}"`);
+      res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+      return res.send(buffer);
+    }
+
+    // Default: treat as text (Markdown, etc.)
+    const content = Buffer.from(data.content, "base64").toString("utf-8");
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.send(content);
   } catch (err) {
-    console.error(err.message);
+    console.error("❌ Error loading file:", err.message);
     res.status(404).json({ error: "Note not found" });
   }
 });

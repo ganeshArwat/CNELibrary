@@ -1,85 +1,100 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
-
-// ✅ Correct imports for react-pdf v7+
+import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import {
+  Download,
+  ZoomIn,
+  ZoomOut,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import "react-pdf/dist/Page/TextLayer.css";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 
-// ✅ Configure PDF.js worker — no CORS issues
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.min.mjs",
-  import.meta.url
-).toString();
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 interface PDFViewerProps {
   fileUrl: string;
 }
 
 const PDFViewer: React.FC<PDFViewerProps> = ({ fileUrl }) => {
-  const [numPages, setNumPages] = useState<number>(0);
-  const [pageNumber, setPageNumber] = useState<number>(1);
-  const [scale, setScale] = useState<number>(1);
-  const [windowWidth, setWindowWidth] = useState<number>(window.innerWidth);
-
-  // 🔹 Update PDF scale on window resize (responsive behavior)
-  useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener("resize", handleResize);
-
-    // Auto-scale based on screen size
-    if (windowWidth < 640) setScale(0.8);
-    else if (windowWidth < 1024) setScale(1);
-    else setScale(1.2);
-
-    return () => window.removeEventListener("resize", handleResize);
-  }, [windowWidth]);
+  const [numPages, setNumPages] = useState(0);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [scale, setScale] = useState(1);
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
   };
 
+  const goToPrevPage = () => setPageNumber((prev) => Math.max(1, prev - 1));
+  const goToNextPage = () => setPageNumber((prev) => Math.min(numPages, prev + 1));
+
+  const handleDownload = () => {
+    const link = document.createElement("a");
+    link.href = fileUrl;
+    link.download = fileUrl.split("/").pop() || "document.pdf";
+    link.click();
+  };
+
   return (
-    <div className="flex flex-col items-center gap-4 w-full">
-      {/* 🔹 Control Bar */}
-      <div className="flex flex-wrap justify-center items-center gap-3 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg shadow">
+    <div className="flex flex-col md:flex-row w-full h-[75vh] bg-white dark:bg-gray-900 rounded-lg shadow-inner overflow-hidden">
+      
+      {/* === Controls === */}
+      <div className="flex md:flex-col flex-row items-center md:items-center justify-center gap-2 md:gap-4 p-2 md:p-3 bg-gray-100 dark:bg-gray-800 border-b md:border-b-0 md:border-r border-gray-300 dark:border-gray-700 md:w-16">
+        {/* Prev Page */}
         <button
-          onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
+          onClick={goToPrevPage}
           disabled={pageNumber <= 1}
-          className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
+          className="p-2 bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-40"
+          title="Previous Page"
         >
-          ◀ Prev
+          <ChevronLeft size={18} />
         </button>
 
-        <span className="text-sm text-gray-700 dark:text-gray-300">
-          Page {pageNumber} / {numPages}
-        </span>
+        {/* Page Indicator */}
+        <div className="text-xs text-center text-gray-700 dark:text-gray-300">
+          {pageNumber}/{numPages || "?"}
+        </div>
+
+        {/* Next Page */}
+        <button
+          onClick={goToNextPage}
+          disabled={pageNumber >= numPages}
+          className="p-2 bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-40"
+          title="Next Page"
+        >
+          <ChevronRight size={18} />
+        </button>
+
+        {/* Zoom */}
+        <button
+          onClick={() => setScale((s) => s + 0.25)}
+          className="p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          title="Zoom In"
+        >
+          <ZoomIn size={18} />
+        </button>
 
         <button
-          onClick={() => setPageNumber((p) => Math.min(numPages, p + 1))}
-          disabled={pageNumber >= numPages}
-          className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
+          onClick={() => setScale((s) => Math.max(0.5, s - 0.25))}
+          className="p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          title="Zoom Out"
         >
-          Next ▶
+          <ZoomOut size={18} />
         </button>
 
-        <div className="flex items-center gap-2 ml-4">
-          <button
-            onClick={() => setScale((s) => s + 0.25)}
-            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            🔍+
-          </button>
-          <button
-            onClick={() => setScale((s) => Math.max(0.5, s - 0.25))}
-            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            🔍-
-          </button>
-        </div>
+        {/* Download */}
+        <button
+          onClick={handleDownload}
+          className="p-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+          title="Download PDF"
+        >
+          <Download size={18} />
+        </button>
       </div>
 
-      {/* 🔹 PDF Container */}
-      <div className="overflow-auto max-h-[85vh] w-full flex justify-center bg-gray-50 dark:bg-gray-900 rounded-lg p-2">
+      {/* === PDF Display === */}
+      <div className="flex-1 overflow-auto flex justify-center items-center p-2">
         <Document
           file={fileUrl}
           onLoadSuccess={onDocumentLoadSuccess}
