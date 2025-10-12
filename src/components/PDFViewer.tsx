@@ -94,7 +94,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ fileUrl }) => {
       </div>
 
       {/* === PDF Display === */}
-      <div className="flex-1 overflow-auto flex justify-center items-center p-2">
+      <div className="flex-1 overflow-auto flex justify-center items-start p-2">
         <Document
           file={fileUrl}
           onLoadSuccess={onDocumentLoadSuccess}
