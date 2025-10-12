@@ -9,6 +9,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import AppLayout from "./features/layouts/AppLayout";
 import NoteViewer from "./features/noteView/NoteViewer";
 import HomePage from "./pages/HomePage";
+import FolderPage from "./pages/FolderPage";
 
 const App = () => {
   const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => {
           <Routes>
             <Route path="/" element={<AppLayout />}>
               <Route index element={<HomePage />} />
+               <Route path="folder/*" element={<FolderPage />} />
               <Route path="note/*" element={<NoteViewer />} /> {/* catch-all */}
             </Route>
 
