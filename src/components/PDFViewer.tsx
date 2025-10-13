@@ -30,7 +30,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ fileUrl }) => {
   };
 
   const goToPrevPage = () => setPageNumber((prev) => Math.max(1, prev - 1));
-  const goToNextPage = () => setPageNumber((prev) => Math.min(numPages, prev + 1));
+  const goToNextPage = () =>
+    setPageNumber((prev) => Math.min(numPages, prev + 1));
 
   const handleDownload = () => {
     const link = document.createElement("a");
@@ -40,8 +41,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ fileUrl }) => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row w-full h-[75vh] bg-white dark:bg-gray-900 rounded-lg shadow-inner overflow-hidden">
-      
+    <div className="flex flex-col md:flex-row w-full h-[85vh] md:h-[70vh] bg-white dark:bg-gray-900 rounded-lg shadow-inner overflow-hidden">
       {/* === Controls === */}
       <div className="flex md:flex-col flex-row items-center md:items-center justify-center gap-2 md:gap-4 p-2 md:p-3 bg-gray-100 dark:bg-gray-800 border-b md:border-b-0 md:border-r border-gray-300 dark:border-gray-700 md:w-16">
         {/* Prev / Next only in single page mode */}
@@ -92,7 +92,9 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ fileUrl }) => {
         <button
           onClick={() => setContinuous((prev) => !prev)}
           className="p-2 bg-purple-500 text-white rounded-md hover:bg-purple-600"
-          title={continuous ? "Switch to Single Page" : "Switch to Continuous View"}
+          title={
+            continuous ? "Switch to Single Page" : "Switch to Continuous View"
+          }
         >
           {continuous ? <FileText size={18} /> : <ScrollText size={18} />}
         </button>
@@ -110,42 +112,42 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ fileUrl }) => {
       {/* === PDF Display === */}
       <div className="flex-1 overflow-auto flex justify-center items-start p-2">
         <Document
-  file={fileUrl}
-  onLoadSuccess={onDocumentLoadSuccess}
-  loading={<p>Loading PDF...</p>}
-  error={<p className="text-red-500">Failed to load PDF.</p>}
->
-  {continuous ? (
-    // 📜 Continuous Mode (show all pages with page numbers)
-    Array.from(new Array(numPages), (_, index) => (
-      <div
-        key={`page_${index + 1}`}
-        className="relative mb-8 flex justify-center items-center"
-      >
-        {/* The PDF Page */}
-        <Page
-          pageNumber={index + 1}
-          scale={scale}
-          renderTextLayer
-          renderAnnotationLayer
-        />
+          file={fileUrl}
+          onLoadSuccess={onDocumentLoadSuccess}
+          loading={<p>Loading PDF...</p>}
+          error={<p className="text-red-500">Failed to load PDF.</p>}
+        >
+          {continuous ? (
+            // 📜 Continuous Mode (show all pages with page numbers)
+            Array.from(new Array(numPages), (_, index) => (
+              <div
+                key={`page_${index + 1}`}
+                className="relative mb-8 flex justify-center items-center"
+              >
+                {/* The PDF Page */}
+                <Page
+                  pageNumber={index + 1}
+                  scale={scale}
+                  renderTextLayer
+                  renderAnnotationLayer
+                />
 
-        {/* Floating Page Number */}
-        <div className="absolute bottom-2 right-4 bg-black/60 text-white text-xs px-2 py-1 rounded-md">
-          Page {index + 1} / {numPages}
-        </div>
-      </div>
-    ))
-  ) : (
-    // 📄 Single Page Mode
-    <Page
-      pageNumber={pageNumber}
-      scale={scale}
-      renderTextLayer
-      renderAnnotationLayer
-    />
-  )}
-</Document>
+                {/* Floating Page Number */}
+                <div className="absolute bottom-2 right-4 bg-black/60 text-white text-xs px-2 py-1 rounded-md">
+                  Page {index + 1} / {numPages}
+                </div>
+              </div>
+            ))
+          ) : (
+            // 📄 Single Page Mode
+            <Page
+              pageNumber={pageNumber}
+              scale={scale}
+              renderTextLayer
+              renderAnnotationLayer
+            />
+          )}
+        </Document>
       </div>
     </div>
   );
