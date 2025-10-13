@@ -274,3 +274,9 @@ app.get("/search", (req, res) => {
     return res.status(500).json({ error: "Search failed", details: err.message });
   }
 });
+
+// Start server and build index (non-blocking)
+app.listen(port, () => {
+  console.log(`🚀 Backend running at http://localhost:${port}`);
+  buildIndex().catch((e) => console.error("buildIndex failed:", e && e.message));
+});
