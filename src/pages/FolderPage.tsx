@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Folder, FileText, ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText, Folder } from "lucide-react";
+import { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import api from "@/api/axios";
 
 interface FileItem {
@@ -9,96 +9,124 @@ interface FileItem {
   type: "folder" | "file";
 }
 
-// Fetch files/folders from backend
 const fetchFiles = async (folderPath: string): Promise<FileItem[]> => {
   const encoded = encodeURIComponent(folderPath);
-  const { data } = await api.get(`/files/${encoded}`);
+  const { data } = await api.get(folderPath ? `/files/${encoded}` : "/files");
   return data;
 };
 
 export default function FolderPage() {
-  const { "*": folderPath } = useParams(); // wildcard for nested folders
+  const { "*": folderPath } = useParams();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: files = [], isLoading, isError } = useQuery({
+  const { data: items = [], isLoading, isError } = useQuery({
     queryKey: ["files", folderPath],
     queryFn: () => fetchFiles(folderPath || ""),
   });
 
-  // Handle file click
   const handleFileClick = (fileName: string) => {
     const fullPath = folderPath ? `${folderPath}/${fileName}` : fileName;
     navigate(`/note/${fullPath}`);
   };
 
-  // Handle subfolder click
   const handleSubfolderClick = (subfolder: string) => {
     const fullPath = folderPath ? `${folderPath}/${subfolder}` : subfolder;
     navigate(`/folder/${fullPath}`);
   };
 
-  // Handle back button
   const handleBack = () => {
-    if (!folderPath) {
-      navigate("/"); // root
-    } else {
-      const parts = folderPath.split("/");
-      parts.pop(); // go one folder up
-      const parentPath = parts.join("/");
-      navigate(parentPath ? `/folder/${parentPath}` : "/");
-    }
+    if (!folderPath) return navigate("/");
+    const parts = folderPath.split("/");
+    parts.pop();
+    const parentPath = parts.join("/");
+    navigate(parentPath ? `/folder/${parentPath}` : "/");
   };
 
-  const filteredFiles = files.filter((file) =>
-    file.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filtered lists
+  const subfolders = items
+    .filter((item) => item.type === "folder")
+    .filter((f) => f.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  if (isLoading) return <p className="p-6">Loading files...</p>;
-  if (isError) return <p className="p-6 text-red-500">Failed to load files.</p>;
+  const files = items
+    .filter((item) => item.type === "file")
+    .filter((f) => f.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+  if (isLoading) return <p className="p-6 text-gray-500">Loading...</p>;
+  if (isError) return <p className="p-6 text-red-500">Failed to load items</p>;
 
   return (
-    <div className="p-6">
-      {/* Back Button */}
-      <div className="mb-4 flex items-center gap-2 cursor-pointer text-blue-500" onClick={handleBack}>
+    <div className="p-6 max-w-4xl mx-auto">
+      {/* Back */}
+      <div
+        className="flex items-center gap-2 text-blue-500 cursor-pointer mb-4 hover:text-blue-600 transition"
+        onClick={handleBack}
+      >
         <ArrowLeft className="h-5 w-5" />
         <span>Back</span>
       </div>
 
       {/* Folder Title */}
-      <h1 className="text-2xl font-bold mb-4">Folder: {folderPath || "Root"}</h1>
+      <h1 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-200">
+        {folderPath || "Root"}
+      </h1>
 
-      {/* Search Box */}
+      {/* Search */}
       <input
         type="text"
-        placeholder="Search files..."
-        className="w-full mb-4 px-2 py-1 border rounded text-sm focus:outline-none focus:ring focus:ring-blue-300 dark:bg-gray-600 dark:text-gray-200"
+        placeholder="Search folders or files..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
+        className="w-full mb-6 px-3 py-2 border rounded text-sm focus:outline-none focus:ring focus:ring-blue-300 dark:bg-gray-700 dark:text-gray-200"
       />
 
-      {/* Files / Folders List */}
-      <ul className="space-y-2">
-        {filteredFiles.map((file) => (
-          <li key={file.name}>
-            <button
-              onClick={() =>
-                file.type === "folder"
-                  ? handleSubfolderClick(file.name)
-                  : handleFileClick(file.name)
-              }
-              className={`flex items-center gap-2 text-sm w-full text-left px-3 py-2 rounded hover:bg-blue-50 dark:hover:bg-gray-600 transition ${
-                file.type === "folder" ? "text-blue-600 dark:text-blue-400 font-semibold" : "text-gray-800 dark:text-gray-300"
-              }`}
-            >
-              {file.type === "folder" ? <Folder className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
-              <span>{file.name}</span>
-            </button>
-          </li>
-        ))}
+      {/* Subfolders */}
+      {subfolders.length > 0 && (
+        <div className="mb-4">
+          <h2 className="text-lg font-medium mb-2 text-blue-600 dark:text-blue-400">
+            Folders
+          </h2>
+          <ul className="space-y-1">
+            {subfolders.map((folder) => (
+              <li key={folder.name}>
+                <button
+                  onClick={() => handleSubfolderClick(folder.name)}
+                  className="flex items-center gap-2 text-left w-full px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition text-blue-600 dark:text-blue-400 font-medium"
+                >
+                  <Folder className="h-5 w-5" />
+                  <span>{folder.name}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
-        {filteredFiles.length === 0 && <p className="text-sm text-gray-500">No files or folders found</p>}
-      </ul>
+      {/* Files */}
+      {files.length > 0 && (
+        <div>
+          <h2 className="text-lg font-medium mb-2 text-gray-700 dark:text-gray-200">
+            Files
+          </h2>
+          <ul className="space-y-1">
+            {files.map((file) => (
+              <li key={file.name}>
+                <button
+                  onClick={() => handleFileClick(file.name)}
+                  className="flex items-center gap-2 text-left w-full px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition text-gray-800 dark:text-gray-300"
+                >
+                  <FileText className="h-5 w-5" />
+                  <span>{file.name}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {subfolders.length === 0 && files.length === 0 && (
+        <p className="text-gray-500">No items found</p>
+      )}
     </div>
   );
 }
