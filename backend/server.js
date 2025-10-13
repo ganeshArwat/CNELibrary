@@ -190,39 +190,49 @@ app.get(/^\/note\/(.+)$/, async (req, res) => {
     if (!filePath) return res.status(400).json({ error: "Missing file path" });
 
     const encodedPath = encodeRepoPath(filePath);
-    const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodedPath}?ref=${DEFAULT_BRANCH}`;
-    const { data } = await axios.get(url, { headers: ghHeaders() });
+    const metaUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodedPath}?ref=${DEFAULT_BRANCH}`;
+    const { data } = await axios.get(metaUrl, { headers: ghHeaders() });
 
     if (data.type !== "file") return res.status(400).json({ error: "Not a file" });
 
-    let buffer;
-
-    // 🔹 Case 1: small file — content field present
-    if (data.content) {
-      buffer = Buffer.from(data.content, "base64");
-    }
-    // 🔹 Case 2: large file — use download_url
-    else if (data.download_url) {
-      const response = await axios.get(data.download_url, {
-        responseType: "arraybuffer",
-      });
-      buffer = Buffer.from(response.data);
-    } else {
-      throw new Error("File content not available");
-    }
-
     const ext = (filePath.split(".").pop() || "").toLowerCase();
-    if (ext === "pdf") res.setHeader("Content-Type", "application/pdf");
-    else if (["md","txt","json","js","ts","css","html","cpp","c","py","java"].includes(ext))
-      res.setHeader("Content-Type", "text/plain; charset=utf-8");
-    else if (["png","jpg","jpeg","gif","bmp"].includes(ext))
-      res.setHeader("Content-Type", `image/${ext === "jpg" ? "jpeg" : ext}`);
-    else res.setHeader("Content-Type", "application/octet-stream");
+    let contentType = "application/octet-stream";
 
+    if (ext === "pdf") contentType = "application/pdf";
+    else if (["md","txt","json","js","ts","css","html","cpp","c","py","java"].includes(ext))
+      contentType = "text/plain; charset=utf-8";
+    else if (["png","jpg","jpeg","gif","bmp"].includes(ext))
+      contentType = `image/${ext === "jpg" ? "jpeg" : ext}`;
+
+    res.setHeader("Content-Type", contentType);
     res.setHeader("Content-Disposition", `inline; filename="${filePath.split("/").pop()}"`);
     res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
 
-    return res.send(buffer);
+    // 🔹 CASE 1: small files (under ~1 MB, GitHub returns Base64)
+    if (data.content) {
+      const buffer = Buffer.from(data.content, "base64");
+      res.send(buffer);
+      return;
+    }
+
+    // 🔹 CASE 2: large files — stream from download_url
+    if (data.download_url) {
+      const response = await axios({
+        url: data.download_url,
+        method: "GET",
+        responseType: "stream",
+      });
+
+      response.data.pipe(res);
+      response.data.on("error", (err) => {
+        console.error("Stream error:", err.message);
+        res.destroy(err);
+      });
+
+      return;
+    }
+
+    throw new Error("File content not available");
   } catch (err) {
     console.error(`/note/* error for path "${req.params[0]}":`, err.message);
     const details =
