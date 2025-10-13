@@ -130,7 +130,7 @@ html {
 .markdown-body th,
 .markdown-body td {
   border: 1px solid hsl(0, 0%, 100%); /* gray-300 */
-  background-color: #1d222a;
+  background-color: #eee;
   padding: 0.5rem 0.75rem;
 }
 .dark .markdown-body th,
@@ -151,10 +151,18 @@ html {
   border-color: #4b5563; /* gray-600 */
   color: #fff
 }
+.markdown-body td code {
+  background-color: #cecece;
+  border-color: #4b5563; /* gray-600 */
+  color: #6f5bc6
+}
+
 .dark .markdown-body td code {
+  background-color: #292f37;
   border-color: #4b5563; /* gray-600 */
   color: #bbb6f5
 }
+
 
 .dark .markdown-body pre {
   background-color: #bbbbbb;
