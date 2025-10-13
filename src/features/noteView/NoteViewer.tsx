@@ -11,6 +11,9 @@ import PDFViewer from "@/components/PDFViewer";
 
 const apiHost = import.meta.env.VITE_API_HOST;
 
+// File extensions treated as pure code
+const CODE_EXTENSIONS = ["js", "ts", "tsx", "py", "java", "cpp", "c", "go", "rb", "sh", "html", "css", "json", "yaml", "yml"];
+
 export default function NoteViewer() {
   const { "*": fullPath } = useParams<{ "*": string }>();
   const navigate = useNavigate();
@@ -36,11 +39,18 @@ export default function NoteViewer() {
     queryFn: async () => {
       const encodedPath = encodeURIComponent(folder ? `${folder}/${file}` : file);
 
+      // PDFs load as file URLs
       if (fileExt === "pdf") return `${apiHost}/note/${encodedPath}`;
 
       const { data } = await axios.get(`${apiHost}/note/${encodedPath}`, {
         responseType: "text",
       });
+
+      // If the file is a code file, wrap its content in a fenced code block
+      if (CODE_EXTENSIONS.includes(fileExt || "")) {
+        return `\`\`\`${fileExt}\n${data}\n\`\`\``;
+      }
+
       return data;
     },
     enabled: !!fullPath,
@@ -67,7 +77,7 @@ export default function NoteViewer() {
 
       {/* Content Area */}
       {fileExt === "pdf" ? (
-          <PDFViewer fileUrl={content as string} />
+        <PDFViewer fileUrl={content as string} />
       ) : (
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-md p-3 sm:p-4 md:p-6 overflow-auto w-full">
           <div className="markdown-body !bg-transparent !text-gray-900 dark:!text-gray-100 text-sm sm:text-base md:text-lg leading-relaxed">
