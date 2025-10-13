@@ -186,7 +186,7 @@ app.get(/^\/files(?:\/(.*))?$/, async (req, res) => {
 // GET /note/* => return file contents
 app.get(/^\/note\/(.+)$/, async (req, res) => {
   try {
-    const filePath = req.params[0]; // everything after /note/
+    const filePath = req.params[0];
     if (!filePath) return res.status(400).json({ error: "Missing file path" });
 
     const encodedPath = encodeRepoPath(filePath);
@@ -195,9 +195,23 @@ app.get(/^\/note\/(.+)$/, async (req, res) => {
 
     if (data.type !== "file") return res.status(400).json({ error: "Not a file" });
 
-    const buffer = Buffer.from(data.content, "base64");
-    const ext = (filePath.split(".").pop() || "").toLowerCase();
+    let buffer;
 
+    // 🔹 Case 1: small file — content field present
+    if (data.content) {
+      buffer = Buffer.from(data.content, "base64");
+    }
+    // 🔹 Case 2: large file — use download_url
+    else if (data.download_url) {
+      const response = await axios.get(data.download_url, {
+        responseType: "arraybuffer",
+      });
+      buffer = Buffer.from(response.data);
+    } else {
+      throw new Error("File content not available");
+    }
+
+    const ext = (filePath.split(".").pop() || "").toLowerCase();
     if (ext === "pdf") res.setHeader("Content-Type", "application/pdf");
     else if (["md","txt","json","js","ts","css","html","cpp","c","py","java"].includes(ext))
       res.setHeader("Content-Type", "text/plain; charset=utf-8");
@@ -211,7 +225,8 @@ app.get(/^\/note\/(.+)$/, async (req, res) => {
     return res.send(buffer);
   } catch (err) {
     console.error(`/note/* error for path "${req.params[0]}":`, err.message);
-    const details = err.response && err.response.data && err.response.data.message ? err.response.data.message : err.message;
+    const details =
+      err.response?.data?.message || err.message;
     return res.status(404).json({ error: "File not found", details });
   }
 });
