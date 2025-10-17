@@ -163,6 +163,10 @@ html {
   color: #bbb6f5
 }
 
+.dark blockquote {
+  color: white;
+}
+
 
 .dark .markdown-body pre {
   background-color: #bbbbbb;
