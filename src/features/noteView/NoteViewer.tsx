@@ -8,11 +8,12 @@ import axios from "axios";
 import "highlight.js/styles/github.css";
 import "github-markdown-css/github-markdown.css";
 import PDFViewer from "@/components/PDFViewer";
+import mermaid from "mermaid";
 
 const apiHost = import.meta.env.VITE_API_HOST;
-
-// File extensions treated as pure code
-const CODE_EXTENSIONS = ["js", "ts", "tsx", "py", "java", "cpp", "c", "go", "rb", "sh", "html", "css", "json", "yaml", "yml"];
+const CODE_EXTENSIONS = [
+  "js","ts","tsx","py","java","cpp","c","go","rb","sh","html","css","json","yaml","yml",
+];
 
 export default function NoteViewer() {
   const { "*": fullPath } = useParams<{ "*": string }>();
@@ -23,6 +24,10 @@ export default function NoteViewer() {
     const handleScroll = () => setShowTopButton(window.scrollY > 250);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    mermaid.initialize({ startOnLoad: false, theme: "default" });
   }, []);
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
@@ -39,30 +44,34 @@ export default function NoteViewer() {
     queryFn: async () => {
       const encodedPath = encodeURIComponent(folder ? `${folder}/${file}` : file);
 
-      // PDFs load as file URLs
       if (fileExt === "pdf") return `${apiHost}/note/${encodedPath}`;
-
       const { data } = await axios.get(`${apiHost}/note/${encodedPath}`, {
         responseType: "text",
       });
 
-      // If the file is a code file, wrap its content in a fenced code block
       if (CODE_EXTENSIONS.includes(fileExt || "")) {
         return `\`\`\`${fileExt}\n${data}\n\`\`\``;
       }
-
       return data;
     },
     enabled: !!fullPath,
   });
 
-  if (isLoading) return <p className="p-4 sm:p-6 text-center">Loading note...</p>;
+  useEffect(() => {
+    if (content) {
+      // Render Mermaid diagrams dynamically
+      mermaid.init(undefined, document.querySelectorAll(".language-mermaid"));
+    }
+  }, [content]);
+
+  if (isLoading) return <p className="p-4 text-center">Loading note...</p>;
   if (isError)
-    return <p className="p-4 sm:p-6 text-red-500 text-center">{(error as Error)?.message}</p>;
+    return (
+      <p className="p-4 text-red-500 text-center">{(error as Error)?.message}</p>
+    );
 
   return (
     <div className="relative w-full max-w-6xl mx-auto px-3 sm:px-4 md:px-6 py-2 sm:py-4 overflow-auto">
-      {/* Back Button */}
       <button
         onClick={() => navigate(-1)}
         className="mb-3 sm:mb-4 px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition text-sm sm:text-base"
@@ -70,25 +79,25 @@ export default function NoteViewer() {
         ← Back
       </button>
 
-      {/* File Title */}
       <h1 className="text-lg sm:text-xl md:text-2xl font-semibold mb-1 sm:mb-4 text-gray-800 dark:text-gray-200 break-words">
         {file}
       </h1>
 
-      {/* Content Area */}
       {fileExt === "pdf" ? (
         <PDFViewer fileUrl={content as string} />
       ) : (
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-md p-3 sm:p-4 md:p-6 overflow-auto w-full">
           <div className="markdown-body !bg-transparent !text-gray-900 dark:!text-gray-100 text-sm sm:text-base md:text-lg leading-relaxed">
-            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeHighlight]}
+            >
               {content || ""}
             </ReactMarkdown>
           </div>
         </div>
       )}
 
-      {/* Go to Top Button */}
       {showTopButton && (
         <button
           onClick={scrollToTop}
