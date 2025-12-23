@@ -300,9 +300,10 @@ function generateSnippet(content, query, maxLength = 200) {
   return snippet;
 }
 
-// GET /search?q=... -> enhanced lunr search
+// GET /search?q=...&folder=... -> enhanced lunr search with optional folder filter
 app.get("/search", (req, res) => {
   const query = req.query.q;
+  const folderFilter = req.query.folder; // Optional folder filter
   if (!query) return res.status(400).json({ error: "Missing search query" });
   if (!idx) return res.status(500).json({ error: "Index not ready" });
 
@@ -340,12 +341,26 @@ app.get("/search", (req, res) => {
     const directMatches = documents
       .filter(doc => {
         const searchLower = searchQuery.toLowerCase();
-        return (
+        const matchesContent = (
           doc.filename.toLowerCase().includes(searchLower) ||
           doc.content.toLowerCase().includes(searchLower) ||
           doc.folder.toLowerCase().includes(searchLower) ||
           (doc.fullPath && doc.fullPath.toLowerCase().includes(searchLower))
         );
+        
+        // Apply folder filter if provided
+        if (folderFilter) {
+          const folderLower = folderFilter.toLowerCase();
+          const docFolderLower = doc.folder.toLowerCase();
+          const docFullPathLower = doc.fullPath ? doc.fullPath.toLowerCase() : '';
+          // Match if folder starts with the filter or is exactly the filter
+          const matchesFolder = docFolderLower === folderLower || 
+                                docFolderLower.startsWith(folderLower + '/') ||
+                                docFullPathLower.startsWith(folderLower + '/');
+          return matchesContent && matchesFolder;
+        }
+        
+        return matchesContent;
       })
       .map(doc => ({
         ref: doc.id,
@@ -360,11 +375,27 @@ app.get("/search", (req, res) => {
       }
     }
     
+    // Filter by folder if provided
+    let filteredResults = allResults;
+    if (folderFilter) {
+      filteredResults = allResults.filter(r => {
+        const doc = documents.find((d) => d.id === r.ref);
+        if (!doc) return false;
+        const folderLower = folderFilter.toLowerCase();
+        const docFolderLower = doc.folder.toLowerCase();
+        const docFullPathLower = doc.fullPath ? doc.fullPath.toLowerCase() : '';
+        // Match if folder starts with the filter or is exactly the filter
+        return docFolderLower === folderLower || 
+               docFolderLower.startsWith(folderLower + '/') ||
+               docFullPathLower.startsWith(folderLower + '/');
+      });
+    }
+    
     // Sort by score (highest first)
-    allResults.sort((a, b) => (b.score || 0) - (a.score || 0));
+    filteredResults.sort((a, b) => (b.score || 0) - (a.score || 0));
     
     // Limit results to top 50
-    const limitedResults = allResults.slice(0, 50);
+    const limitedResults = filteredResults.slice(0, 50);
     
     const formattedResults = limitedResults.map((r) => {
       const doc = documents.find((d) => d.id === r.ref);

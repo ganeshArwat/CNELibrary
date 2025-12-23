@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, FileText, Folder } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, FileText, Folder, Search } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "@/api/axios";
 
@@ -19,11 +19,34 @@ export default function FolderPage() {
   const { "*": folderPath } = useParams();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
+  const [contentSearchTerm, setContentSearchTerm] = useState("");
+  const [contentSearchResults, setContentSearchResults] = useState<any[]>([]);
+  const [showContentSearch, setShowContentSearch] = useState(false);
 
   const { data: items = [], isLoading, isError } = useQuery({
     queryKey: ["files", folderPath],
     queryFn: () => fetchFiles(folderPath || ""),
   });
+
+  // Content search within folder
+  useEffect(() => {
+    if (!contentSearchTerm.trim()) {
+      setContentSearchResults([]);
+      return;
+    }
+    const timeout = setTimeout(() => {
+      const searchUrl = folderPath 
+        ? `/search?q=${encodeURIComponent(contentSearchTerm)}&folder=${encodeURIComponent(folderPath)}`
+        : `/search?q=${encodeURIComponent(contentSearchTerm)}`;
+      api.get(searchUrl)
+        .then((res) => setContentSearchResults(res.data))
+        .catch((err) => {
+          console.error("Content search failed", err);
+          setContentSearchResults([]);
+        });
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [contentSearchTerm, folderPath]);
 
   const handleFileClick = (e: React.MouseEvent, fileName: string) => {
     const fullPath = folderPath ? `${folderPath}/${fileName}` : fileName;
@@ -85,14 +108,84 @@ export default function FolderPage() {
         {folderPath || "Root"}
       </h1>
 
-      {/* Search */}
-      <input
-        type="text"
-        placeholder="Search folders or files..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="w-full mb-6 px-3 py-2 border rounded text-sm focus:outline-none focus:ring focus:ring-blue-300 dark:bg-gray-700 dark:text-gray-200"
-      />
+      {/* Search Section */}
+      <div className="mb-6 space-y-3">
+        {/* File/Folder Name Search */}
+        <input
+          type="text"
+          placeholder="Search folders or files by name..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full px-3 py-2 border rounded text-sm focus:outline-none focus:ring focus:ring-blue-300 dark:bg-gray-700 dark:text-gray-200"
+        />
+        
+        {/* Content Search Toggle */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowContentSearch(!showContentSearch)}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded transition"
+          >
+            <Search className="h-4 w-4" />
+            <span>Search content in this folder</span>
+          </button>
+        </div>
+
+        {/* Content Search Input */}
+        {showContentSearch && (
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search content within this folder..."
+              value={contentSearchTerm}
+              onChange={(e) => setContentSearchTerm(e.target.value)}
+              className="w-full px-3 py-2 border rounded text-sm focus:outline-none focus:ring focus:ring-blue-300 dark:bg-gray-700 dark:text-gray-200"
+            />
+            {contentSearchResults.length > 0 && (
+              <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-96 overflow-auto">
+                {contentSearchResults.map((res, idx) => {
+                  const url = res.fullPath ? `/note/${res.fullPath}` : `/note/${res.folder}/${res.filename}`;
+                  return (
+                    <div
+                      key={res.id}
+                      className={`px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition
+                        ${idx !== contentSearchResults.length - 1 ? "border-b border-gray-200 dark:border-gray-700" : ""}`}
+                      onClick={(e) => {
+                        if (e.ctrlKey || e.metaKey) {
+                          e.preventDefault();
+                          window.open(url, '_blank');
+                        } else {
+                          navigate(url);
+                          setContentSearchTerm("");
+                          setContentSearchResults([]);
+                          setShowContentSearch(false);
+                        }
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
+                            {res.filename}
+                          </div>
+                          {res.folder && res.folder !== folderPath && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              {res.folder}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {res.snippet && (
+                        <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                          {res.snippet}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Subfolders */}
       {subfolders.length > 0 && (
