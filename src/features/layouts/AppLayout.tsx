@@ -11,6 +11,7 @@ import cneLogo from "@/images/Cnelogo.png";
 import { useTheme } from "@/context/ThemeContext";
 import api from "@/api/axios"; // axios instance
 import FolderNode from "@/components/FolderNode";
+import PathBar from "@/components/PathBar";
 
 interface FileItem {
   name: string;
@@ -226,23 +227,25 @@ export default function AppLayout() {
           <div className="flex-1 flex flex-col min-h-screen bg-gray-200 dark:bg-gray-800">
             
             {/* Header */}
-            <header className={`flex items-center justify-between border-b border-border/20 px-3 md:px-6 py-3 md:py-5 h-16 md:h-20 transition-colors
+            <header className={`flex flex-col border-b border-border/20 transition-colors
               ${darkMode ? "bg-background/50" : "bg-gray-700 text-white shadow-sm"}`}>
               
-              <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
-                <button className="md:hidden p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 flex-shrink-0"
-                  onClick={() => setSidebarOpen(!sidebarOpen)}>
-                  <MenuIcon className={`h-5 w-5 md:h-6 md:w-6 ${darkMode ? "text-white" : "text-gray-100"}`} />
-                </button>
-                <h1 className="text-sm md:text-xl font-bold tracking-wide cursor-pointer min-w-0 truncate
-                  text-white dark:text-gray-100 hover:text-blue-300 dark:hover:text-blue-400"
-                  onClick={() => navigate("/")}>
-                  Notes Library
-                </h1>
-              </div>
+              {/* Top Row: Menu, Title, Search, Theme */}
+              <div className="flex items-center justify-between px-3 md:px-6 py-2 md:py-3 h-12 md:h-14">
+                <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+                  <button className="md:hidden p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 flex-shrink-0"
+                    onClick={() => setSidebarOpen(!sidebarOpen)}>
+                    <MenuIcon className={`h-5 w-5 md:h-6 md:w-6 ${darkMode ? "text-white" : "text-gray-100"}`} />
+                  </button>
+                  <h1 className="text-sm md:text-xl font-bold tracking-wide cursor-pointer min-w-0 truncate
+                    text-white dark:text-gray-100 hover:text-blue-300 dark:hover:text-blue-400"
+                    onClick={() => navigate("/")}>
+                    Notes Library
+                  </h1>
+                </div>
 
-              {/* Right: Search + Theme Toggle */}
-              <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 relative">
+                {/* Right: Search + Theme Toggle */}
+                <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 relative">
                 {/* Desktop search */}
                 <div className="hidden md:block relative" ref={desktopSearchRef}>
                   <input
@@ -301,10 +304,16 @@ export default function AppLayout() {
                   )}
                 </div>
 
-                {/* Theme toggle */}
-                <button onClick={toggleDarkMode} className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-                  {darkMode ? <Sun className="h-5 w-5 text-yellow-400" /> : <Moon className="h-5 w-5 text-white" />}
-                </button>
+                  {/* Theme toggle */}
+                  <button onClick={toggleDarkMode} className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                    {darkMode ? <Sun className="h-5 w-5 text-yellow-400" /> : <Moon className="h-5 w-5 text-white" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Bottom Row: Path Bar */}
+              <div className="px-3 md:px-6 py-2 border-t border-gray-600 dark:border-gray-700">
+                <PathBar />
               </div>
             </header>
 
