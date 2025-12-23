@@ -203,9 +203,9 @@ export default function AppLayout() {
                     <div className="absolute right-0 top-full mt-2 w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-96 overflow-auto z-50">
                       {searchResults.map((res, idx) => {
                         const folderPath = res.folder ? `${res.folder}/` : '';
-                        const url = `/note/${folderPath}${res.filename}`;
+                        const url = res.fullPath ? `/note/${res.fullPath}` : `/note/${folderPath}${res.filename}`;
                         return (
-                          <div key={res.id} className={`px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition
+                          <div key={res.id} className={`px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition
                             ${idx !== searchResults.length - 1 ? "border-b border-gray-200 dark:border-gray-700" : ""}`}
                             onClick={(e) => {
                               if (e.ctrlKey || e.metaKey) {
@@ -214,10 +214,26 @@ export default function AppLayout() {
                               } else {
                                 navigate(url);
                                 setSearchResults([]);
+                                setNoteSearch("");
                               }
                             }}>
-                            <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{res.filename}</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">{res.folder}</div>
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
+                                  {res.filename}
+                                </div>
+                                {res.folder && (
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                    {res.folder}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            {res.snippet && (
+                              <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                                {res.snippet}
+                              </div>
+                            )}
                           </div>
                         );
                       })}

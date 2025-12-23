@@ -110,6 +110,7 @@ async function buildIndex() {
             filename: name,
             content,
             folder: folderPath || "",
+            fullPath: folderPath ? `${folderPath}/${name}` : name,
           });
         } catch (err) {
           console.warn(`collectDocs: failed to fetch file ${value} — ${err.message}`);
@@ -126,8 +127,10 @@ async function buildIndex() {
   try {
     idx = lunr(function () {
       this.ref("id");
-      this.field("filename");
-      this.field("content");
+      this.field("filename", { boost: 10 }); // Boost filename matches
+      this.field("content", { boost: 1 });
+      this.field("folder", { boost: 5 }); // Boost folder matches
+      this.field("fullPath", { boost: 3 }); // Boost full path matches
       for (const doc of documents) this.add(doc);
     });
     console.log(`✅ In-memory search index built: ${documents.length} documents`);
@@ -252,23 +255,140 @@ app.get("/tree", async (req, res) => {
   }
 });
 
-// GET /search?q=... -> simple lunr search
+// Helper function to generate snippet with context around search term
+function generateSnippet(content, query, maxLength = 200) {
+  if (!content || !query) {
+    return content ? content.substring(0, maxLength) + "..." : "";
+  }
+
+  const queryLower = query.toLowerCase();
+  const contentLower = content.toLowerCase();
+  
+  // Find first occurrence of query
+  const index = contentLower.indexOf(queryLower);
+  
+  if (index === -1) {
+    // If exact match not found, try word boundary search
+    const words = queryLower.split(/\s+/).filter(w => w.length > 2);
+    let foundIndex = -1;
+    for (const word of words) {
+      const wordIndex = contentLower.indexOf(word);
+      if (wordIndex !== -1) {
+        foundIndex = wordIndex;
+        break;
+      }
+    }
+    
+    if (foundIndex === -1) {
+      return content.substring(0, maxLength) + "...";
+    }
+    
+    const start = Math.max(0, foundIndex - 50);
+    const end = Math.min(content.length, foundIndex + maxLength - 50);
+    let snippet = content.substring(start, end);
+    if (start > 0) snippet = "..." + snippet;
+    if (end < content.length) snippet = snippet + "...";
+    return snippet;
+  }
+  
+  // Extract context around the match
+  const start = Math.max(0, index - 50);
+  const end = Math.min(content.length, index + query.length + maxLength - 50);
+  let snippet = content.substring(start, end);
+  if (start > 0) snippet = "..." + snippet;
+  if (end < content.length) snippet = snippet + "...";
+  return snippet;
+}
+
+// GET /search?q=... -> enhanced lunr search
 app.get("/search", (req, res) => {
   const query = req.query.q;
   if (!query) return res.status(400).json({ error: "Missing search query" });
   if (!idx) return res.status(500).json({ error: "Index not ready" });
 
   try {
-    const results = idx.search(query).map((r) => {
+    // Enhanced search query - add wildcards for partial matches
+    let searchQuery = query.trim();
+    
+    // Split query into terms and add wildcards for better matching
+    const terms = searchQuery.split(/\s+/).filter(t => t.length > 0);
+    const enhancedQuery = terms
+      .map(term => {
+        // Add wildcard if term doesn't already have one
+        if (!term.includes('*')) {
+          return term + '*';
+        }
+        return term;
+      })
+      .join(' ');
+    
+    let searchResults;
+    try {
+      // Try enhanced query first
+      searchResults = idx.search(enhancedQuery);
+    } catch (err) {
+      // Fallback to original query if enhanced fails
+      try {
+        searchResults = idx.search(searchQuery);
+      } catch (fallbackErr) {
+        // If both fail, try simple term matching
+        searchResults = idx.search(terms.join(' '));
+      }
+    }
+    
+    // Also do a direct content search for exact matches (case-insensitive)
+    const directMatches = documents
+      .filter(doc => {
+        const searchLower = searchQuery.toLowerCase();
+        return (
+          doc.filename.toLowerCase().includes(searchLower) ||
+          doc.content.toLowerCase().includes(searchLower) ||
+          doc.folder.toLowerCase().includes(searchLower) ||
+          (doc.fullPath && doc.fullPath.toLowerCase().includes(searchLower))
+        );
+      })
+      .map(doc => ({
+        ref: doc.id,
+        score: 1.5, // Boost direct matches
+      }));
+    
+    // Merge and deduplicate results
+    const allResults = [...searchResults];
+    for (const directMatch of directMatches) {
+      if (!allResults.find(r => r.ref === directMatch.ref)) {
+        allResults.push(directMatch);
+      }
+    }
+    
+    // Sort by score (highest first)
+    allResults.sort((a, b) => (b.score || 0) - (a.score || 0));
+    
+    // Limit results to top 50
+    const limitedResults = allResults.slice(0, 50);
+    
+    const formattedResults = limitedResults.map((r) => {
       const doc = documents.find((d) => d.id === r.ref);
+      if (!doc) {
+        return {
+          id: r.ref,
+          filename: r.ref.split('/').pop() || r.ref,
+          folder: "",
+          snippet: "",
+          score: r.score || 0,
+        };
+      }
+      
       return {
         id: r.ref,
-        filename: doc ? doc.filename : r.ref,
-        folder: doc ? doc.folder : "",
-        snippet: doc ? doc.content.substring(0, 200) + "..." : "",
+        filename: doc.filename,
+        folder: doc.folder || "",
+        fullPath: doc.fullPath || (doc.folder ? `${doc.folder}/${doc.filename}` : doc.filename),
+        snippet: generateSnippet(doc.content, query),
+        score: r.score || 0,
       };
     });
-    return res.json(results);
+    
+    return res.json(formattedResults);
   } catch (err) {
     console.error("/search error:", err.message);
     return res.status(500).json({ error: "Search failed", details: err.message });
