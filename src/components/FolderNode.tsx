@@ -87,7 +87,7 @@ const FolderNode: React.FC<FolderNodeProps> = ({
                     : "text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-800 hover:text-green-700 dark:hover:text-green-300"
                   }`}
                 style={{ paddingLeft: `${(level + 1) * 16 + 16}px` }}
-                onClick={() => handleFileClick(folderName, file.name)}
+                onClick={(e) => handleFileClick(e, folderName, file.name)}
                 title={file.name}
               >
                 <FileText className="h-4 w-4 flex-shrink-0" />

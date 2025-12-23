@@ -25,14 +25,28 @@ export default function FolderPage() {
     queryFn: () => fetchFiles(folderPath || ""),
   });
 
-  const handleFileClick = (fileName: string) => {
+  const handleFileClick = (e: React.MouseEvent, fileName: string) => {
     const fullPath = folderPath ? `${folderPath}/${fileName}` : fileName;
-    navigate(`/note/${fullPath}`);
+    const url = `/note/${fullPath}`;
+    
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      window.open(url, '_blank');
+    } else {
+      navigate(url);
+    }
   };
 
-  const handleSubfolderClick = (subfolder: string) => {
+  const handleSubfolderClick = (e: React.MouseEvent, subfolder: string) => {
     const fullPath = folderPath ? `${folderPath}/${subfolder}` : subfolder;
-    navigate(`/folder/${fullPath}`);
+    const url = `/folder/${fullPath}`;
+    
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      window.open(url, '_blank');
+    } else {
+      navigate(url);
+    }
   };
 
   const handleBack = () => {
@@ -90,7 +104,7 @@ export default function FolderPage() {
             {subfolders.map((folder) => (
               <li key={folder.name}>
                 <button
-                  onClick={() => handleSubfolderClick(folder.name)}
+                  onClick={(e) => handleSubfolderClick(e, folder.name)}
                   className="flex items-center gap-2 text-left w-full px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition text-blue-600 dark:text-blue-400 font-medium"
                 >
                   <Folder className="h-5 w-5" />
@@ -112,7 +126,7 @@ export default function FolderPage() {
             {files.map((file) => (
               <li key={file.name}>
                 <button
-                  onClick={() => handleFileClick(file.name)}
+                  onClick={(e) => handleFileClick(e, file.name)}
                   className="flex items-center gap-2 text-left w-full px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition text-gray-800 dark:text-gray-300"
                 >
                   <FileText className="h-5 w-5" />

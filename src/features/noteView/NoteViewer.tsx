@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { Copy, Check } from "lucide-react";
 import "highlight.js/styles/github.css";
 import "github-markdown-css/github-markdown.css";
 import PDFViewer from "@/components/PDFViewer";
@@ -31,6 +32,67 @@ export default function NoteViewer() {
   }, []);
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
+
+  // Copy button component for code blocks
+  const CodeBlock = ({ children, ...props }: any) => {
+    const [copied, setCopied] = useState(false);
+    
+    // Extract code element from pre children
+    const codeElement = React.Children.toArray(children).find(
+      (child: any) => child?.type === "code" || child?.props?.className?.includes("language-")
+    ) as any;
+    
+    // Get code content - handle different structures
+    let codeString = "";
+    if (codeElement) {
+      if (typeof codeElement.props?.children === "string") {
+        codeString = codeElement.props.children;
+      } else if (Array.isArray(codeElement.props?.children)) {
+        codeString = codeElement.props.children
+          .map((child: any) => (typeof child === "string" ? child : child?.props?.children || ""))
+          .join("");
+      } else {
+        codeString = String(codeElement.props?.children || "");
+      }
+      codeString = codeString.replace(/\n$/, "");
+    }
+
+    const handleCopy = async () => {
+      if (!codeString) return;
+      try {
+        await navigator.clipboard.writeText(codeString);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error("Failed to copy:", err);
+      }
+    };
+
+    // Only add copy button if this is a code block (has code element with className)
+    const isCodeBlock = codeElement?.props?.className;
+
+    if (!isCodeBlock) {
+      return <pre {...props}>{children}</pre>;
+    }
+
+    return (
+      <div className="relative group">
+        <pre {...props}>{children}</pre>
+        <button
+          onClick={handleCopy}
+          className="absolute top-2 right-2 p-1.5 rounded-md bg-gray-700 dark:bg-gray-600 text-gray-200 hover:bg-gray-600 dark:hover:bg-gray-500 transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none z-10 shadow-lg"
+          title={copied ? "Copied!" : "Copy code"}
+          aria-label="Copy code to clipboard"
+        >
+          {copied ? (
+            <Check className="w-4 h-4 text-green-400" />
+          ) : (
+            <Copy className="w-4 h-4" />
+          )}
+        </button>
+      </div>
+    );
+  };
 
   if (!fullPath) return <p className="p-6 text-red-500">No file specified</p>;
 
@@ -91,6 +153,9 @@ export default function NoteViewer() {
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               rehypePlugins={[rehypeHighlight]}
+              components={{
+                pre: CodeBlock,
+              }}
             >
               {content || ""}
             </ReactMarkdown>

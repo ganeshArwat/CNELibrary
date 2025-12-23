@@ -78,11 +78,18 @@ export default function AppLayout() {
     }
   };
 
-  const handleFileClick = (folder: string, file: string) => {
-    setSelectedFolder(folder);
-    setSelectedFile(file);
-    navigate(`/note/${folder}/${file}`);
-    setSidebarOpen(false);
+  const handleFileClick = (e: React.MouseEvent, folder: string, file: string) => {
+    const url = `/note/${folder}/${file}`;
+    
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      window.open(url, '_blank');
+    } else {
+      setSelectedFolder(folder);
+      setSelectedFile(file);
+      navigate(url);
+      setSidebarOpen(false);
+    }
   };
 
   const filteredFolders = useMemo(() =>
@@ -194,14 +201,26 @@ export default function AppLayout() {
                   />
                   {searchResults.length > 0 && (
                     <div className="absolute right-0 top-full mt-2 w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-96 overflow-auto z-50">
-                      {searchResults.map((res, idx) => (
-                        <div key={res.id} className={`px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition
-                          ${idx !== searchResults.length - 1 ? "border-b border-gray-200 dark:border-gray-700" : ""}`}
-                          onClick={() => { navigate(`/note${res.folder}/${res.filename}`); setSearchResults([]); }}>
-                          <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{res.filename}</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">{res.folder}</div>
-                        </div>
-                      ))}
+                      {searchResults.map((res, idx) => {
+                        const folderPath = res.folder ? `${res.folder}/` : '';
+                        const url = `/note/${folderPath}${res.filename}`;
+                        return (
+                          <div key={res.id} className={`px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition
+                            ${idx !== searchResults.length - 1 ? "border-b border-gray-200 dark:border-gray-700" : ""}`}
+                            onClick={(e) => {
+                              if (e.ctrlKey || e.metaKey) {
+                                e.preventDefault();
+                                window.open(url, '_blank');
+                              } else {
+                                navigate(url);
+                                setSearchResults([]);
+                              }
+                            }}>
+                            <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{res.filename}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{res.folder}</div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

@@ -45,13 +45,27 @@ export default function HomePage() {
   if (isLoading) return <p className="p-6">Loading folders...</p>;
   if (isError) return <p className="p-6 text-red-500">Failed to load folders.</p>;
 
-  const handleFileClick = (folderPath: string, fileName: string) => {
+  const handleFileClick = (e: React.MouseEvent, folderPath: string, fileName: string) => {
     const fullPath = folderPath ? `${folderPath}/${fileName}` : fileName;
-    navigate(`/note/${fullPath}`);
+    const url = `/note/${fullPath}`;
+    
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      window.open(url, '_blank');
+    } else {
+      navigate(url);
+    }
   };
 
-  const handleFolderClick = (folderPath: string) => {
-    navigate(`/folder/${folderPath}`);
+  const handleFolderClick = (e: React.MouseEvent, folderPath: string) => {
+    const url = `/folder/${folderPath}`;
+    
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      window.open(url, '_blank');
+    } else {
+      navigate(url);
+    }
   };
 
   const handleSearch = (folder: string, term: string) => {
@@ -86,7 +100,7 @@ export default function HomePage() {
               {/* Top-level folder header clickable */}
               <div
                 className="flex items-center gap-3 mb-3 cursor-pointer"
-                onClick={() => handleFolderClick(folder)}
+                onClick={(e) => handleFolderClick(e, folder)}
               >
                 <Folder className="h-6 w-6 text-blue-500 flex-shrink-0" />
                 <h2 className="font-semibold text-lg truncate text-blue-600 dark:text-blue-400">{folder}</h2>
@@ -114,7 +128,7 @@ export default function HomePage() {
                   {subfolders.map((sub) => (
                     <li key={sub.name}>
                       <button
-                        onClick={() => handleFolderClick(`${folder}/${sub.name}`)}
+                        onClick={(e) => handleFolderClick(e, `${folder}/${sub.name}`)}
                         className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 font-semibold hover:text-blue-500 w-full text-left px-2 py-1 rounded hover:bg-blue-50 dark:hover:bg-gray-600 transition"
                       >
                         <Folder className="h-4 w-4 flex-shrink-0" />
@@ -129,7 +143,7 @@ export default function HomePage() {
                   {filteredFiles.map((file) => (
                     <li key={file.name}>
                       <button
-                        onClick={() => handleFileClick(folder, file.name)}
+                        onClick={(e) => handleFileClick(e, folder, file.name)}
                         className="flex items-center gap-2 text-sm text-gray-800 dark:text-gray-300 hover:text-blue-500 w-full text-left px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition"
                       >
                         <FileText className="h-4 w-4 flex-shrink-0" />
