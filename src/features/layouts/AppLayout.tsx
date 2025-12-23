@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Sun,
@@ -19,6 +19,7 @@ interface FileItem {
 
 export default function AppLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { darkMode, toggleDarkMode } = useTheme();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -109,6 +110,58 @@ export default function AppLayout() {
     }, 300);
     return () => clearTimeout(timeout);
   }, [noteSearch]);
+
+  // Auto-expand sidebar when viewing a note
+  useEffect(() => {
+    if (location.pathname.startsWith('/note/')) {
+      const notePath = location.pathname.replace('/note/', '');
+      if (!notePath) return;
+
+      // Parse the path to extract folder and filename
+      const pathParts = notePath.split('/');
+      const fileName = pathParts.pop() || '';
+      const folderPath = pathParts.join('/');
+
+      // Set selected folder and file
+      setSelectedFolder(folderPath);
+      setSelectedFile(fileName);
+
+      // Expand all parent folders
+      const foldersToOpen = new Set<string>();
+      let currentPath = '';
+      
+      for (const part of pathParts) {
+        currentPath = currentPath ? `${currentPath}/${part}` : part;
+        foldersToOpen.add(currentPath);
+      }
+
+      // Add all parent folders to openFolders
+      setOpenFolders(prev => {
+        const newOpenFolders = new Set(prev);
+        foldersToOpen.forEach(folder => newOpenFolders.add(folder));
+        return Array.from(newOpenFolders);
+      });
+
+      // Load folder contents for all parent folders
+      const loadFolderContents = async (folderPath: string) => {
+        if (!filesByFolder[folderPath]) {
+          try {
+            const res = await api.get(`/files/${encodeURIComponent(folderPath)}`);
+            setFilesByFolder(prev => ({ ...prev, [folderPath]: res.data }));
+          } catch (err) {
+            console.error(`Failed to fetch folder ${folderPath}:`, err);
+          }
+        }
+      };
+
+      // Load contents for all parent folders
+      let currentFolderPath = '';
+      for (const part of pathParts) {
+        currentFolderPath = currentFolderPath ? `${currentFolderPath}/${part}` : part;
+        loadFolderContents(currentFolderPath);
+      }
+    }
+  }, [location.pathname, filesByFolder]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100 dark:bg-background">
@@ -212,6 +265,13 @@ export default function AppLayout() {
                                 e.preventDefault();
                                 window.open(url, '_blank');
                               } else {
+                                // Parse the path to set selected folder and file
+                                const pathParts = res.fullPath ? res.fullPath.split('/') : (res.folder ? `${res.folder}/${res.filename}` : res.filename).split('/');
+                                const fileName = pathParts.pop() || res.filename;
+                                const folderPath = pathParts.join('/');
+                                
+                                setSelectedFolder(folderPath);
+                                setSelectedFile(fileName);
                                 navigate(url);
                                 setSearchResults([]);
                                 setNoteSearch("");
