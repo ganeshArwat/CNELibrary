@@ -121,110 +121,262 @@ html {
 }
 
 
-/* Tables */
-.markdown-body table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 1rem;
+/* ============================================
+   ChatGPT-style Markdown Prose
+   Clean typography, readable spacing, polished code blocks
+   ============================================ */
+
+/* Base prose */
+.markdown-body {
+  line-height: 1.75;
+  word-wrap: break-word;
 }
+
+.markdown-body > * + * {
+  margin-top: 1em;
+}
+
+.markdown-body p {
+  margin-bottom: 0.75em;
+}
+
+/* Headings - clear hierarchy */
+.markdown-body h1 {
+  font-size: 1.75em;
+  font-weight: 700;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  padding-bottom: 0.25em;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.3);
+}
+
+.markdown-body h2 {
+  font-size: 1.4em;
+  font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  padding-bottom: 0.2em;
+}
+
+.markdown-body h3 {
+  font-size: 1.2em;
+  font-weight: 600;
+  margin-top: 1.25em;
+  margin-bottom: 0.4em;
+}
+
+.markdown-body h4, .markdown-body h5, .markdown-body h6 {
+  font-size: 1.05em;
+  font-weight: 600;
+  margin-top: 1em;
+  margin-bottom: 0.35em;
+}
+
+/* Blockquotes - ChatGPT-style left border */
+.markdown-body blockquote {
+  margin: 1em 0;
+  padding: 0.5em 1em;
+  padding-left: 1.25em;
+  border-left: 4px solid #4a9eff;
+  background: rgba(74, 158, 255, 0.08);
+  border-radius: 0 6px 6px 0;
+  color: inherit;
+  font-style: normal;
+}
+
+.dark .markdown-body blockquote {
+  border-left-color: #4a9eff;
+  background: rgba(74, 158, 255, 0.12);
+}
+
+/* Inline code - subtle pill background */
+.markdown-body :not(pre) > code {
+  padding: 0.2em 0.4em;
+  font-size: 0.9em;
+  background: rgba(128, 128, 128, 0.15);
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.dark .markdown-body :not(pre) > code {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Code blocks - ChatGPT-style dark theme with rounded corners */
+.markdown-body pre {
+  margin: 1em 0;
+  padding: 0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #282c34 !important;
+}
+
+.markdown-body pre code {
+  display: block;
+  padding: 1.25em 1.5em;
+  font-size: 0.9em;
+  line-height: 1.6;
+  overflow-x: auto;
+  background: transparent !important;
+}
+
+/* High-contrast code block text - ensure readability in dark mode */
+.dark .markdown-body pre code,
+.dark .markdown-body pre code.hljs {
+  color: #e5e7eb !important;
+}
+
+/* Tables - clean borders */
+/* Override github-markdown-css: display:block + width:max-content causes extra empty space on the right */
+.markdown-body table {
+  width: 100% !important;
+  display: table !important;
+  border-collapse: collapse;
+  margin: 1em 0;
+  font-size: 0.95em;
+  overflow: visible;
+}
+
 .markdown-body th,
 .markdown-body td {
-  border: 1px solid hsl(0, 0%, 100%); /* gray-300 */
-  background-color: #eee;
-  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(128, 128, 128, 0.25);
+  padding: 0.6em 0.9em;
+  text-align: left;
 }
-.dark .markdown-body th,
-.dark .markdown-body td {
-  border: 1px solid #d1d5db; /* gray-300 */
-  background-color: #1d222a;
-  padding: 0.5rem 0.75rem;
-}
+
 .markdown-body th {
-  background-color: #f3f4f6; /* gray-100 */
+  background: rgba(128, 128, 128, 0.12);
   font-weight: 600;
 }
-.dark .markdown-body th {
-  background-color: #374151; /* gray-700 */
-  color: white;
-}
-.dark .markdown-body td {
-  border-color: #4b5563; /* gray-600 */
-  color: #fff
-}
+
 .markdown-body td code {
-  background-color: #cecece;
-  border-color: #4b5563; /* gray-600 */
-  color: #634cca
+  background: rgba(128, 128, 128, 0.15);
+  padding: 0.15em 0.35em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+/* Dark mode tables - high contrast, clearly visible */
+.dark .markdown-body table {
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid #4b5563;
+  background: #1f2937;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.dark .markdown-body th,
+.dark .markdown-body td {
+  border: 1px solid #4b5563;
+  padding: 0.65em 1em;
+  color: #f3f4f6;
+}
+
+.dark .markdown-body th {
+  background: #374151;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.dark .markdown-body td {
+  background: #1f2937;
+}
+
+.dark .markdown-body tbody tr:nth-child(even) td {
+  background: #111827;
 }
 
 .dark .markdown-body td code {
-  background-color: #292f37;
-  border-color: #4b5563; /* gray-600 */
-  color: #bbb6f5
+  background: #374151;
+  color: #e0e7ff;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
 }
 
-.dark blockquote {
-  color: #ccc;
-}
-
-
-.dark .markdown-body pre {
-  background-color: #bbbbbb;
-}
-.markdown-body pre {
-  background-color: #d3d3d3;
-}
-
-
-
-/* Top-level unordered list */
+/* Lists */
 .markdown-body ul {
-  list-style-type: disc;   /* • */
-  padding-left: 1.5rem;
-  margin-bottom: 1rem;
+  list-style-type: disc;
+  padding-left: 1.75em;
+  margin: 0.75em 0;
 }
 
-/* First-level nested ul */
 .markdown-body ul ul {
-  list-style-type: circle; /* ○ */
-  padding-left: 1.5rem;    /* extra indent */
-  margin-bottom: 0.5rem;
+  list-style-type: circle;
+  padding-left: 1.5em;
+  margin: 0.4em 0;
 }
 
-/* Second-level nested ul */
 .markdown-body ul ul ul {
-  list-style-type: square; /* ▪ */
-  padding-left: 1.5rem;    /* extra indent */
-  margin-bottom: 0.25rem;
+  list-style-type: square;
+  padding-left: 1.5em;
 }
 
-/* Third-level nested ul */
 .markdown-body ul ul ul ul {
-  list-style-type: disc;   /* repeat pattern */
-  padding-left: 1.5rem;
+  list-style-type: disc;
+  padding-left: 1.5em;
 }
 
-/* Optional: adjust spacing for li */
 .markdown-body li {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.35em;
   line-height: 1.6;
 }
 
-/* Dark mode text for list items */
 .dark .markdown-body li {
-  color: #f9fafb;
+  color: inherit;
 }
 
 .markdown-body ol {
   list-style-type: decimal;
-  padding-left: 1.5rem;
-  margin-bottom: 1rem;
+  padding-left: 1.75em;
+  margin: 0.75em 0;
 }
 
 .markdown-body ol ol {
-  list-style-type: lower-alpha; /* a, b, c */
+  list-style-type: lower-alpha;
 }
 
 .markdown-body ol ol ol {
-  list-style-type: lower-roman; /* i, ii, iii */
+  list-style-type: lower-roman;
+}
+
+/* Links */
+.markdown-body a {
+  color: #4a9eff;
+  text-decoration: none;
+}
+
+.markdown-body a:hover {
+  text-decoration: underline;
+}
+
+.dark .markdown-body a {
+  color: #6bb3ff;
+}
+
+/* Horizontal rule */
+.markdown-body hr {
+  border: none;
+  height: 1px;
+  background: rgba(128, 128, 128, 0.25);
+  margin: 1.5em 0;
+}
+
+.dark .markdown-body hr {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Strong & emphasis */
+.markdown-body strong {
+  font-weight: 600;
+}
+
+.markdown-body em {
+  font-style: italic;
+}
+
+/* Mermaid diagrams - ensure text is visible in dark mode */
+.dark .markdown-body .language-mermaid svg text,
+.dark .markdown-body .mermaid svg text,
+.dark .markdown-body .mermaid-diagram svg text {
+  fill: #e5e7eb !important;
 }

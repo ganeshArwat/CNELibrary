@@ -6,10 +6,11 @@ import rehypeHighlight from "rehype-highlight";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Copy, Check } from "lucide-react";
-import "highlight.js/styles/github.css";
+import "highlight.js/styles/atom-one-dark.css";
 import "github-markdown-css/github-markdown.css";
 import PDFViewer from "@/components/PDFViewer";
 import mermaid from "mermaid";
+import { useTheme } from "@/context/ThemeContext";
 
 const apiHost = import.meta.env.VITE_API_HOST;
 const CODE_EXTENSIONS = [
@@ -19,6 +20,7 @@ const CODE_EXTENSIONS = [
 export default function NoteViewer() {
   const { "*": fullPath } = useParams<{ "*": string }>();
   const navigate = useNavigate();
+  const { darkMode } = useTheme();
   const [showTopButton, setShowTopButton] = useState(false);
 
   useEffect(() => {
@@ -28,21 +30,63 @@ export default function NoteViewer() {
   }, []);
 
   useEffect(() => {
-    mermaid.initialize({ startOnLoad: false, theme: "default" });
-  }, []);
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: darkMode ? "dark" : "default",
+    });
+  }, [darkMode]);
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
-  // Copy button component for code blocks
+  // Mermaid diagram - use render() API to get SVG string (avoids init/getBBox DOM issues)
+  const MermaidDiagram = ({ code }: { code: string }) => {
+    const containerRef = React.useRef<HTMLDivElement>(null);
+    const [svg, setSvg] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+      if (!code.trim()) return;
+      setSvg(null);
+      setError(null);
+      const id = `mermaid-${Math.random().toString(36).slice(2, 11)}`;
+      const render = () => {
+        mermaid
+          .render(id, code.trim())
+          .then(({ svg: result }) => setSvg(result))
+          .catch((err) => setError(err?.message || "Mermaid render failed"));
+      };
+      const t = setTimeout(render, 100);
+      return () => clearTimeout(t);
+    }, [code, darkMode]);
+
+    if (error) {
+      return (
+        <pre className="my-4 p-4 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm overflow-x-auto">
+          <code className="text-gray-800 dark:text-gray-200">{code}</code>
+          <p className="mt-2 text-amber-600 dark:text-amber-400 text-xs">{error}</p>
+        </pre>
+      );
+    }
+    if (svg) {
+      return (
+        <div
+          ref={containerRef}
+          className="mermaid-diagram my-4 flex justify-center"
+          dangerouslySetInnerHTML={{ __html: svg }}
+        />
+      );
+    }
+    return <div ref={containerRef} className="my-4 min-h-[100px] animate-pulse bg-gray-100 dark:bg-gray-800 rounded-lg" />;
+  };
+
+  // Copy button + language label for code blocks (ChatGPT-style)
   const CodeBlock = ({ children, ...props }: any) => {
     const [copied, setCopied] = useState(false);
-    
-    // Extract code element from pre children
+
     const codeElement = React.Children.toArray(children).find(
       (child: any) => child?.type === "code" || child?.props?.className?.includes("language-")
     ) as any;
-    
-    // Get code content - handle different structures
+
     let codeString = "";
     if (codeElement) {
       if (typeof codeElement.props?.children === "string") {
@@ -57,6 +101,10 @@ export default function NoteViewer() {
       codeString = codeString.replace(/\n$/, "");
     }
 
+    const langClass = codeElement?.props?.className || "";
+    const langMatch = langClass.match(/language-(\w+)/);
+    const language = langMatch ? langMatch[1] : "";
+
     const handleCopy = async () => {
       if (!codeString) return;
       try {
@@ -68,28 +116,40 @@ export default function NoteViewer() {
       }
     };
 
-    // Only add copy button if this is a code block (has code element with className)
     const isCodeBlock = codeElement?.props?.className;
+    const hasCode = !!codeElement;
+    const isMermaid = language === "mermaid";
 
-    if (!isCodeBlock) {
+    if (!hasCode) {
       return <pre {...props}>{children}</pre>;
     }
 
+    if (isMermaid) {
+      return <MermaidDiagram code={codeString} />;
+    }
+
     return (
-      <div className="relative group">
-        <pre {...props}>{children}</pre>
-        <button
-          onClick={handleCopy}
-          className="absolute top-2 right-2 p-1.5 rounded-md bg-gray-700 dark:bg-gray-600 text-gray-200 hover:bg-gray-600 dark:hover:bg-gray-500 transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none z-10 shadow-lg"
-          title={copied ? "Copied!" : "Copy code"}
-          aria-label="Copy code to clipboard"
-        >
-          {copied ? (
-            <Check className="w-4 h-4 text-green-400" />
-          ) : (
-            <Copy className="w-4 h-4" />
-          )}
-        </button>
+      <div className="relative group my-4 rounded-xl overflow-hidden bg-[#282c34]">
+        <div className="flex items-center justify-between px-4 py-2 bg-[#21252b] border-b border-white/5">
+          <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+            {language || "code"}
+          </span>
+          <button
+            onClick={handleCopy}
+            className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+            title={copied ? "Copied!" : "Copy code"}
+            aria-label="Copy code to clipboard"
+          >
+            {copied ? (
+              <Check className="w-4 h-4 text-green-400" />
+            ) : (
+              <Copy className="w-4 h-4" />
+            )}
+          </button>
+        </div>
+        <pre {...props} className="!mt-0 !rounded-none">
+          {children}
+        </pre>
       </div>
     );
   };
@@ -119,12 +179,6 @@ export default function NoteViewer() {
     enabled: !!fullPath,
   });
 
-  useEffect(() => {
-    if (content) {
-      // Render Mermaid diagrams dynamically
-      mermaid.init(undefined, document.querySelectorAll(".language-mermaid"));
-    }
-  }, [content]);
 
   if (isLoading) return <p className="p-4 text-center">Loading note...</p>;
   if (isError)
@@ -149,7 +203,10 @@ export default function NoteViewer() {
         <PDFViewer fileUrl={content as string} />
       ) : (
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-md p-3 sm:p-4 md:p-6 overflow-auto w-full">
-          <div className="markdown-body !bg-transparent !text-gray-900 dark:!text-gray-100 text-sm sm:text-base md:text-lg leading-relaxed">
+          <div
+            key={darkMode ? "dark" : "light"}
+            className="markdown-body !bg-transparent !text-gray-900 dark:!text-gray-100 text-sm sm:text-base md:text-lg leading-relaxed"
+          >
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               rehypePlugins={[rehypeHighlight]}
