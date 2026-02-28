@@ -4,6 +4,8 @@ const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
 const lunr = require("lunr");
+const fs = require("fs");
+const path = require("path");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -16,10 +18,16 @@ const GITHUB_OWNER = process.env.GITHUB_OWNER;
 const GITHUB_REPO = process.env.GITHUB_REPO;
 const DEFAULT_BRANCH = process.env.DEFAULT_BRANCH || "main";
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const USE_LOCAL = /^(true|1|yes)$/i.test(process.env.USE_LOCAL || "");
+const LOCAL_PATH = process.env.LOCAL_PATH || "";
 
-if (!GITHUB_OWNER || !GITHUB_REPO || !GITHUB_TOKEN) {
+if (USE_LOCAL) {
+  console.log("📁 Local mode: serving from", LOCAL_PATH || "(LOCAL_PATH not set)");
+  if (!LOCAL_PATH || !fs.existsSync(LOCAL_PATH)) {
+    console.error("LOCAL_PATH must point to an existing folder. Current:", LOCAL_PATH);
+  }
+} else if (!GITHUB_OWNER || !GITHUB_REPO || !GITHUB_TOKEN) {
   console.error("Missing one of required env vars: GITHUB_OWNER, GITHUB_REPO, GITHUB_TOKEN");
-  // Do not exit automatically in dev; still useful to continue for local debug.
 }
 
 // helper to return headers
@@ -29,9 +37,44 @@ function ghHeaders() {
   return headers;
 }
 
-// === IN-MEMORY SEARCH ===
-let idx = null; // Lunr index
-let documents = []; // Store doc objects {id, filename, content, folder}
+// Skip these folders when scanning locally (saves memory, avoids binary blobs)
+const LOCAL_SKIP_DIRS = new Set([".git", "node_modules", "__pycache__", ".next", "dist", "build", ".venv", "venv"]);
+
+// Only index these text extensions (skip PDFs, images, binaries)
+const INDEXABLE_EXT = new Set(["md", "txt", "cpp", "c", "py", "java", "js", "ts", "json", "html", "css", "yaml", "yml"]);
+const MAX_INDEX_FILE_SIZE = 500 * 1024; // 500KB max per file for search index
+
+// === LOCAL FILE HELPERS (when USE_LOCAL=true) ===
+function readLocalContents(repoPath = "") {
+  const fullPath = path.join(LOCAL_PATH, ...repoPath.split("/").filter(Boolean));
+  if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isDirectory()) {
+    throw new Error(`Directory not found: ${repoPath}`);
+  }
+  const entries = fs.readdirSync(fullPath, { withFileTypes: true });
+  return entries
+    .filter((e) => !e.isDirectory() || (!LOCAL_SKIP_DIRS.has(e.name) && !e.name.startsWith("."))) // skip .git, node_modules, hidden dirs
+    .map((e) => ({
+      name: e.name,
+      type: e.isDirectory() ? "dir" : "file",
+      path: repoPath ? `${repoPath}/${e.name}` : e.name,
+    }));
+}
+
+function readLocalFile(filePath) {
+  const fullPath = path.join(LOCAL_PATH, ...filePath.split("/").filter(Boolean));
+  if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isFile()) {
+    throw new Error(`File not found: ${filePath}`);
+  }
+  return fs.readFileSync(fullPath, "utf-8");
+}
+
+function readLocalFileBuffer(filePath) {
+  const fullPath = path.join(LOCAL_PATH, ...filePath.split("/").filter(Boolean));
+  if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isFile()) {
+    throw new Error(`File not found: ${filePath}`);
+  }
+  return fs.readFileSync(fullPath);
+}
 
 // === GITHUB HELPERS ===
 async function fetchGitHubContents(repoPath = "") {
@@ -68,11 +111,26 @@ async function fetchGitHubFile(filePath) {
   }
 }
 
+// Unified fetch: use local or GitHub based on USE_LOCAL
+async function fetchContents(repoPath) {
+  if (USE_LOCAL && LOCAL_PATH) {
+    return readLocalContents(repoPath);
+  }
+  return fetchGitHubContents(repoPath);
+}
+
+async function fetchFile(filePath) {
+  if (USE_LOCAL && LOCAL_PATH) {
+    return readLocalFile(filePath);
+  }
+  return fetchGitHubFile(filePath);
+}
+
 // Build recursive tree (folders + all files)
 async function buildTree(repoPath = "") {
   let items;
   try {
-    items = await fetchGitHubContents(repoPath);
+    items = await fetchContents(repoPath);
   } catch (err) {
     console.warn(`buildTree: failed to list path "${repoPath}" — ${err.message}`);
     return {}; // return empty so caller continues
@@ -103,8 +161,20 @@ async function buildIndex() {
   async function collectDocs(treeNode, folderPath = "") {
     for (const [name, value] of Object.entries(treeNode)) {
       if (typeof value === "string") {
+        // In local mode: skip large or non-indexable files to avoid OOM
+        if (USE_LOCAL && LOCAL_PATH) {
+          const ext = name.split(".").pop()?.toLowerCase() || "";
+          if (!INDEXABLE_EXT.has(ext)) continue;
+          const fullPath = path.join(LOCAL_PATH, ...value.split("/").filter(Boolean));
+          try {
+            const stat = fs.statSync(fullPath);
+            if (stat.size > MAX_INDEX_FILE_SIZE) continue;
+          } catch {
+            continue;
+          }
+        }
         try {
-          const content = await fetchGitHubFile(value);
+          const content = await fetchFile(value);
           documents.push({
             id: value,
             filename: name,
@@ -114,7 +184,6 @@ async function buildIndex() {
           });
         } catch (err) {
           console.warn(`collectDocs: failed to fetch file ${value} — ${err.message}`);
-          // continue indexing others
         }
       } else {
         await collectDocs(value, folderPath ? `${folderPath}/${name}` : name);
@@ -145,7 +214,7 @@ async function buildIndex() {
 // GET /folders  -> top-level directories in repo root
 app.get("/folders", async (req, res) => {
   try {
-    const items = await fetchGitHubContents("");
+    const items = await fetchContents("");
     const folders = items.filter((i) => i.type === "dir").map((f) => f.name);
     return res.json(folders);
   } catch (err) {
@@ -157,7 +226,7 @@ app.get("/folders", async (req, res) => {
 // GET /files  -> list root files + folders
 app.get("/files", async (req, res) => {
   try {
-    const items = await fetchGitHubContents("");
+    const items = await fetchContents("");
     const result = items.map((i) => ({ name: i.name, type: i.type === "dir" ? "folder" : "file" }));
     return res.json(result);
   } catch (err) {
@@ -177,7 +246,7 @@ app.get(/^\/files(?:\/(.*))?$/, async (req, res) => {
   try {
     const folderPath = req.params[0] || ""; // the captured group
     const encodedPath = encodeRepoPath(folderPath);
-    const items = await fetchGitHubContents(encodedPath);
+    const items = await fetchContents(encodedPath);
     const result = items.map((i) => ({ name: i.name, type: i.type === "dir" ? "folder" : "file" }));
     res.json(result);
   } catch (err) {
@@ -189,18 +258,11 @@ app.get(/^\/files(?:\/(.*))?$/, async (req, res) => {
 // GET /note/* => return file contents
 app.get(/^\/note\/(.+)$/, async (req, res) => {
   try {
-    const filePath = req.params[0];
+    const filePath = decodeURIComponent(req.params[0]);
     if (!filePath) return res.status(400).json({ error: "Missing file path" });
-
-    const encodedPath = encodeRepoPath(filePath);
-    const metaUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodedPath}?ref=${DEFAULT_BRANCH}`;
-    const { data } = await axios.get(metaUrl, { headers: ghHeaders() });
-
-    if (data.type !== "file") return res.status(400).json({ error: "Not a file" });
 
     const ext = (filePath.split(".").pop() || "").toLowerCase();
     let contentType = "application/octet-stream";
-
     if (ext === "pdf") contentType = "application/pdf";
     else if (["md","txt","json","js","ts","css","html","cpp","c","py","java"].includes(ext))
       contentType = "text/plain; charset=utf-8";
@@ -210,6 +272,20 @@ app.get(/^\/note\/(.+)$/, async (req, res) => {
     res.setHeader("Content-Type", contentType);
     res.setHeader("Content-Disposition", `inline; filename="${filePath.split("/").pop()}"`);
     res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+
+    // LOCAL MODE: serve from disk
+    if (USE_LOCAL && LOCAL_PATH) {
+      const buffer = readLocalFileBuffer(filePath);
+      res.send(buffer);
+      return;
+    }
+
+    // GITHUB MODE
+    const encodedPath = encodeRepoPath(filePath);
+    const metaUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodedPath}?ref=${DEFAULT_BRANCH}`;
+    const { data } = await axios.get(metaUrl, { headers: ghHeaders() });
+
+    if (data.type !== "file") return res.status(400).json({ error: "Not a file" });
 
     // 🔹 CASE 1: small files (under ~1 MB, GitHub returns Base64)
     if (data.content) {
