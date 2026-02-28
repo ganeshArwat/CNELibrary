@@ -2,7 +2,7 @@ json-server --watch ./src/data/db.json --port 5000
 
 # Welcome to your Lovable project
 
-## Project info
+## Project info 
 
 **URL**: https://lovable.dev/projects/42a69a5a-25c1-4a2f-b798-89087afcf7b1
 
